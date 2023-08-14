@@ -1,0 +1,2 @@
+tags$a(class="btn btn-default", href=qurl, target="blank", div("Upload", br(), "New Shapefile"), icon = icon("fa-upload"),
+       style="color: #FFFFFF; background-color: #003366; border-color: #33D2FF")

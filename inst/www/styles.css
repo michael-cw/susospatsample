@@ -1,0 +1,198 @@
+
+input[type="number"] {
+  max-width: 80%;
+}
+
+div.outer {
+  position: fixed;
+  top: 41px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+/* Customize fonts */
+  body, label, input, button, select {
+    font-family: 'Helvetica Neue', Helvetica;
+    font-weight: 200;
+  }
+h1, h2, h3, h4 { font-weight: 500; color: #0d47a1;}
+
+h5 {
+  font-weight:bold;
+  color:#0d47a1;
+  margin:0 0 0 0;
+}
+
+.control-label {
+  text-align: center !important;
+  font-weight:bold;
+}
+
+.form-control {
+  margin: 20 0 20 0;
+}
+
+.shiny-input-container {
+  text-align: center !important;
+}
+
+#sampType {
+  text-align: left !important;
+}
+
+#popCreate {
+  text-align: left !important;
+}
+
+#controls {
+/* Appearance */
+  background-color: white;
+padding: 20px 20px 20px 20px;
+cursor: move;
+/* Fade out while not hovering */
+  opacity: 0.65;
+zoom: 0.9;
+transition: opacity 500ms 1s;
+}
+#controls:hover {
+/* Fade in while hovering */
+  opacity: 0.95;
+transition-delay: 0;
+}
+
+/* Position and style citation */
+  #cite {
+  position: absolute;
+bottom: 10px;
+left: 10px;
+font-size: 12px;
+}
+
+/* If not using map tiles, show a white background */
+  .leaflet-container {
+    background-color: white;
+  }
+
+/*set map position of messagebox to top */
+.shiny-notification {
+             width: 250px !important;
+             position:fixed;
+             top: 65px;
+             right: 10px;
+             color: #FFFFFF;
+             background-color: #0d47a1;
+             }
+
+.shiny-notification-content-text {
+  overflow-wrap: break-word !important;
+}
+
+
+
+/*change color and opacity for warning */
+.shiny-notification-warning {
+             background-color:#ff0f0f;
+             color: #FFFFFF;
+             opacity: 0.7;
+             }
+
+/*#shiny-notification-panel {
+        position: absolute !important;
+        top: 10px !important;
+        right: 30px !important;
+        height: 50px !important;
+        width: 300px !important;
+      }
+*/
+
+
+/*Button default*/
+.btn1 {
+   background-color:#0D47A1;
+   color: #0D47A1;
+   }
+
+/*box
+.box-header {
+  background-color:#0D47A1;
+   color: #FFFFFF;
+   text-align: center;
+}*/
+.box-success {
+     border-style: solid;
+   border-width: 3px;
+   border-color: #0D47A1;
+   padding: 0 5% 0 5%;
+}
+
+.box-success .box-header {
+  background-color:#337ab7;
+   color: #fff;
+   text-align: center;
+}
+
+.box-info {
+     border-style: solid;
+   border-width: 3px;
+   border-color: #00ab51;
+   padding: 0 5% 0 5%;
+}
+
+.box-info .box-header {
+  background-color:#00ab51;
+   color: #FFFFFF;
+   text-align: center;
+}
+
+.box-warning {
+     border-style: solid;
+   border-width: 3px;
+   border-color: #98252b;
+   padding: 0 5% 0 5%;
+}
+
+.box-warning .box-header {
+  background-color:#98252b;
+   color: #FFFFFF;
+   text-align: center;
+}
+.box-danger {
+  box-shadow: 5px 10px 8px #888888;
+  padding: 0 5% 0 5%;
+}
+
+
+.sampleModal .h2 {
+    border-style: solid;
+    border-width: 3px;
+    border-color: #98252b;
+    background-color:#98252b;
+}
+
+
+.help-block {
+  margin: 0 0 30 0;
+  text-align: justify;
+  font-weight:bold;
+  color:#0d47a1;
+  border-style:double;
+  padding:5px;
+}
+.tabbable > .nav > li[class=active] > a {
+  background-color: #0d47a1;
+  color:#FFFFFF;
+}
+
+.info-box {
+  border-style: solid;
+  border-width: 3px;
+  border-color: #98252b;
+  background-color:#98252b;
+  margin: 0 -30% 0 20%;
+  width: 120%;
+  height: 65px;
+}
+

@@ -1,0 +1,79 @@
+Package: susospatsample
+Title: Shiny Application for Spatial Sample and Survey Solutions resource
+    creation
+Version: 0.1.0
+Authors@R: 
+    person("Michael", "Wild", , "mwild@worldbank.org", role = c("aut", "cre"))
+Description: A comprehensive Shiny application to process and sample from
+    spatial resources. Spatial area frames can be created either through
+    the creation of a regular grid, the use of gridded population data or
+    from Enumeration areas boundaries. Besides sampling from an area frame
+    (i.e. Enumeration Areas), the application also allows for sampling
+    from geo-referenced points (i.e. Buildings). When the sampling is
+    completed resources for data collection with the Survey Solutions CAPI
+    system can be created, and directly assigned to the server.
+License: MIT + file LICENSE
+Imports: 
+    basemaps,
+    cluster,
+    data.table,
+    DBI,
+    dismo,
+    doParallel,
+    dplyr,
+    DT,
+    fasterize,
+    flextable,
+    foreach,
+    geos,
+    geosphere,
+    ggmap,
+    ggplot2,
+    glue,
+    grDevices,
+    htmltools,
+    htmlwidgets,
+    httr,
+    jsonlite,
+    leaflet,
+    lubridate,
+    lwgeom,
+    magick,
+    magrittr,
+    mapdeck,
+    mapview,
+    Matrix,
+    officer,
+    parallel,
+    plyr,
+    raster,
+    RColorBrewer,
+    readr,
+    RgoogleMaps,
+    rhandsontable,
+    rmapshaper,
+    rpostgis,
+    RPostgres,
+    sampling,
+    sf,
+    shiny,
+    shinyalert,
+    shinycssloaders,
+    shinydashboard,
+    shinyjs,
+    shinyWidgets,
+    sp,
+    spex,
+    spsurvey,
+    stars,
+    stats,
+    stringr,
+    SurveySolutionsAPI,
+    terra,
+    tools,
+    withr,
+    zip
+Encoding: UTF-8
+Language: en
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
