@@ -13,6 +13,8 @@ knitr::opts_chunk$set(
 )
 ```
 
+<a href='https://docs.mysurvey.solutions/'><img src="man/img/susospatial.png" align="right" height="139"/></a>
+ 
 # Survey Solutions Spatial Sampling Application
 
 <!-- badges: start -->
