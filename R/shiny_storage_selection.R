@@ -19,6 +19,13 @@ datastoreUI<-function(id,
                       styledbreset = "color: #FFFFFF;background-color: #7f0000;border-color: #7f0000") {
   ns <- NS(id)
   tagList(
+    tags$head(tags$style(HTML('
+      #setstorage-datastore {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: 80%;
+      }
+    '))),
     fluidRow(h4("Data Storage")),
     fluidRow(shiny::helpText("
                             Specify how the data should be stored. In case you are
@@ -93,7 +100,7 @@ datastoreUI<-function(id,
     fluidRow(
       column(1),
       column(10,
-             DT::dataTableOutput(ns("storageSummary"))
+             DT::dataTableOutput(ns("storageSummary"), width = "5vw")
       ),
       column(1)
     ),br()
@@ -113,9 +120,22 @@ datastoreSRV <- function(id,
       smTab<-list(dom="t")
 
       ##  2. Info table (no selection, first column is Names)
-      infoTable<-.%>% formatStyle(1,  color = '#FFFFFF',
+      infoTable<-.%>% formatStyle(columns = 1,
+                                  color = '#FFFFFF',
                                   backgroundColor = '#0d47a1',
+                                  display = 'block',
+                                  `overflow-wrap` = 'break-word',
+                                  overflow = 'hidden',
                                   fontWeight = 'bold')
+      infoTable2<-.%>% formatStyle(columns = 2,
+                                  #color = '#FFFFFF',
+                                  #backgroundColor = '#0d47a1',
+                                  display = 'block',
+                                  `overflow-wrap` = 'break-word',
+                                  overflow = 'hidden',
+                                  width = '15vw'
+                                  #fontWeight = 'bold'
+                                  )
 
       inputTable<-.%>% formatStyle(2,
                                    fontWeight = 'bold',
@@ -216,7 +236,7 @@ datastoreSRV <- function(id,
         shiny::validate(need(storemode(), message = "Select Storag first!"))
         if(!is.null(storemode()) && storemode()=="local"){
           shinyjs::enable(id = "showDBshape")
-          tab<-cbind(c("Storage Mode", "Shape File Storag:", "Raster Storage"),c("Local Directory",shppath(), raspath()))
+          tab<-cbind(c("Storage Mode", "Shape File Storage:", "Raster Storage"),c("Local Directory",shppath(), raspath()))
 
         } else if(!is.null(storemode()) && storemode()=="pg"){
           shinyjs::enable(id = "showDBshape")
@@ -224,7 +244,10 @@ datastoreSRV <- function(id,
         }
         DT::datatable(tab, smTab, selection = "none", rownames = F,
                       colnames = c("",""),
-                      style = "bootstrap") %>% infoTable
+                      style = "bootstrap") %>%
+          infoTable %>%
+          infoTable2
+
       })
 
       ####################FIN SERVER####################################################

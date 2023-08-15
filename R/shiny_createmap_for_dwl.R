@@ -33,86 +33,112 @@ modal_createbasemap_ui <- function(id,
 #'
 #'
 modal_createbasemap_provider_ui <- function(id,
-                                            style = "color: #FFFFFF; width: 180px;background-color: #1976D2;border-color: #0d47a1") {
+                                            style = "color: #FFFFFF; background-color: #1976D2;border-color: #0d47a1") {
   ns <- NS(id)
   tagList(
+    tags$head(tags$style(HTML('
+      #basemap {
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      #mapfordwl-baseMapSummary {
+        margin: 0 auto !important;
+      }
+    '))),
     shinyjs::useShinyjs(),
     fluidRow(h4("Basemap Service"), style = "text-align: center;"),
-    fluidRow(
-      br(),
-      selectizeInput(
-        ns("base_provider"),
-        "Map API",
-        choices = c("ESRI World Imagery" = 1,
-                    "Open Street Map (OSM)" = 2,
-                    "Mapbox" = 3,
-                    "Bing" = 4,
-                    "ESRI Tile Package" = 5),
-        options = list(
-          placeholder = 'Select Provider!',
-          onInitialize = I('function() { this.setValue(""); }')
+    div(id = "basemap",
+        fluidRow(
+          br(),
+          selectizeInput(
+            ns("base_provider"),
+            "Map API",
+            choices = c("ESRI World Imagery" = 1,
+                        "Open Street Map (OSM)" = 2,
+                        "Mapbox" = 3,
+                        "Bing" = 4,
+                        "ESRI Tile Package" = 5),
+            options = list(
+              placeholder = 'Select Provider!',
+              onInitialize = I('function() { this.setValue(""); }')
+            )
+          ),
+          br(),
+          # Bing & Mapbox
+          conditionalPanel(sprintf("input['%s'] == 3 | input['%s'] == 4", ns("base_provider"), ns("base_provider")),
+                           fluidRow(
+                             column(1),
+                             column(10,
+                                    passwordInput(ns("base_key"),
+                                                  "For MapDeck and Bing please provide API key!",
+                                                  width = "100%",
+                                                  placeholder = "API Key")
+                             ),
+                             column(1)
+                           )
+          ),
+          # ESRI map server
+          conditionalPanel(sprintf("input['%s'] == 5", ns("base_provider")),
+                           fluidRow(
+                             column(6,
+                                    textInput(ns("arc_service"),
+                                              "Service URL:",
+                                              value = "https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer")
+                             ),
+                             column(6,
+                                    textInput(ns("arc_portal"),
+                                              "Portal URL:",
+                                              value = "https://www.arcgis.com/sharing/rest/generateToken")
+                             )
+                           ),
+                           fluidRow(
+                             column(6,
+                                    textInput(ns("arc_user"),
+                                              "User Name:",
+                                              placeholder = "ArcGis User Name")
+                             ),
+                             column(6,
+                                    passwordInput(ns("arc_pw"),
+                                                  "Password:",
+                                                  placeholder = "ArcGis User Password")
+                             )
+                           )
+          ),
+          br(),
+          # OSM & ESRI (no credentials)
+          conditionalPanel(sprintf("input['%s'] != ''", ns("base_provider")),
+                           fluidRow( column(1),
+                                     column(10,
+                                            actionButton(ns("base_set"),
+                                                         "Confirm Basemap Service!",
+                                                         icon("check-square"),
+                                                         width = "100%",
+                                                         style=styleActButtonActivate)
+                                     ),
+                                     column(1)
+                           ),
+                           fluidRow(
+                             column(1),
+                             column(10,
+                                    DT::dataTableOutput(ns("baseMapSummary"), width = "80%")
+                             ),
+                             column(1)
+                           ),br(),
+                           fluidRow(
+                             column(1),
+                             column(10,
+                                    shinyjs::hidden(
+                                      actionButton(ns("base_reset"),
+                                                   "Reset Basemap Service!",
+                                                   icon("ban"),
+                                                   width = "100%",
+                                                   style="color: #FFFFFF;background-color: #7f0000;border-color: #7f0000")
+                                    )
+                             ),
+                             column(1)
+                           )
+          )
         )
-      )
-    ),
-    br(),
-    # Bing & Mapbox
-    conditionalPanel(sprintf("input['%s'] == 3 | input['%s'] == 4", ns("base_provider"), ns("base_provider")),
-                     fluidRow(
-                       passwordInput(ns("base_key"),
-                                     "For MapDeck and Bing please provide API key!",
-                                     placeholder = "API Key")
-                     )
-    ),
-    # ESRI map server
-    conditionalPanel(sprintf("input['%s'] == 5", ns("base_provider")),
-                     fluidRow(
-                       column(6,
-                              textInput(ns("arc_service"),
-                                        "Service URL:",
-                                        value = "https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer")
-                       ),
-                       column(6,
-                              textInput(ns("arc_portal"),
-                                        "Portal URL:",
-                                        value = "https://www.arcgis.com/sharing/rest/generateToken")
-                       )
-                     ),
-                     fluidRow(
-                       column(6,
-                              textInput(ns("arc_user"),
-                                        "User Name:",
-                                        placeholder = "ArcGis User Name")
-                       ),
-                       column(6,
-                              passwordInput(ns("arc_pw"),
-                                            "Password:",
-                                            placeholder = "ArcGis User Password")
-                       )
-                     )
-    ),
-    br(),
-    # OSM & ESRI (no credentials)
-    conditionalPanel(sprintf("input['%s'] != ''", ns("base_provider")),
-                     fluidRow(actionButton(ns("base_set"),
-                                           "Confirm Basemap Service!",
-                                           icon("check-square"), width = "100%",
-                                           style=styleActButtonActivate)
-                     ),
-                     fluidRow(
-                       column(1),
-                       column(10,
-                              DT::dataTableOutput(ns("baseMapSummary"))
-                       ),
-                       column(1)
-                     ),br(),
-                     fluidRow(
-                       shinyjs::hidden(
-                         actionButton(ns("base_reset"),
-                                      "Reset Basemap Service!",
-                                      icon("ban"), width = "100%",
-                                      style="color: #FFFFFF;background-color: #7f0000;border-color: #7f0000")
-                       )
-                     )
     )
   )
 }
@@ -141,9 +167,22 @@ modal_createbasemap_server <- function(id,
 
     # table style
     smTab<-list(dom="t")
-    infoTable<-.%>% formatStyle(1,  color = '#FFFFFF',
+    ##  2. Info table (no selection, first column is Names)
+    infoTable<-.%>% formatStyle(columns = 1,
+                                color = '#FFFFFF',
                                 backgroundColor = '#0d47a1',
+                                `overflow-wrap` = 'break-word',
+                                overflow = 'hidden',
+                                #width = '80%',
                                 fontWeight = 'bold')
+    infoTable2<-.%>% formatStyle(columns = 2,
+                                 #color = '#FFFFFF',
+                                 #backgroundColor = '#0d47a1',
+                                 `overflow-wrap` = 'break-word',
+                                 overflow = 'hidden',
+                                 #width = '80%'
+                                 #fontWeight = 'bold'
+    )
     ## CSS/UI Styles
     styleDwlButton<-c("color: #FFFFFF;  width: 180px;background-color: #1976D2;
                   border-color: #1976D2;
@@ -286,7 +325,8 @@ modal_createbasemap_server <- function(id,
       tab<-cbind(c("Basemap Service", "Credentials:"),c(baseMapService(),baseMapCredentials()))
       DT::datatable(tab, smTab, selection = "none", rownames = F,
                     colnames = c("",""),
-                    style = "bootstrap") %>% infoTable
+                    style = "bootstrap") %>%
+        infoTable %>% infoTable2
     })
 
 

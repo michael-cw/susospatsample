@@ -8,8 +8,7 @@
 
 main_ui<-function(request){
   fpwww<-system.file("www", package = "susospatsample")
-  fluidPage(theme=file.path(fpwww, "bluish.css"),
-            ###################################################
+  fluidPage(
             ##    Title BAR (logo, bg color font color etc)
             useShinyjs(),
             useShinyalert(),
