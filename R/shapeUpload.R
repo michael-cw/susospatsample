@@ -92,7 +92,7 @@ ms_simpl_complexShape<-function(SHP = Boundaries, level = 100000, keep = NULL) {
 ###############################################################################################
 #                         VALIDATION AND TRANSFORMATION (INCL. db WRITE)
 ###############################################################################################
-shapeLoad2_cleanToDB<-function(SHP = tmp.shp, shpName = NULL, writeToDB = T, DBtype = "pg", localpath = NULL) {
+shapeLoad2_cleanToDB<-function(SHP = tmp.shp, shpName = NULL, writeToDB = T, localpath = NULL, ...) {
   crsOld<-st_crs(SHP)
   ##  ii. Remove empty geometries first
   if(sum(st_is_empty(SHP))>0) {
@@ -123,7 +123,7 @@ shapeLoad2_cleanToDB<-function(SHP = tmp.shp, shpName = NULL, writeToDB = T, DBt
     tableName<-iconv(tableName, from = 'UTF-8', to = 'ASCII//TRANSLIT')
     tableName<-stringr::str_remove_all(tableName, "[^[:alnum:]]")
     ## b. write & return list
-    dbTableList<-writeSFtoDB(object = SHP, fn = tableName, DBtype = DBtype, localpath = localpath)
+    dbTableList<-writeSFtoDB(object = SHP, fn = tableName, localpath = localpath, ...)
   }
 
   ## vi. RMAPSHAPER MS simplify
@@ -270,76 +270,120 @@ readSHPfromDB<-function(dbname = NULL, host = "localhost",
 ################################################################################################
 writeRAStoDB<-function(object = NULL, dbname = NULL, host = "localhost",
                        user = NULL, password = NULL,
-                       fn = NULL, listTables = F) {
+                       fn = NULL, listTables = F, inShinyApp = T, DBtype = "pg", localpath = NULL) {
 
-  ## 1. Connection details
-  con <- DBI::dbConnect(RPostgres::Postgres(),
-                        host = host,
-                        dbname = dbname,
-                        port = 5432,
-                        user = user,
-                        password = password)
-  ## 2. write the SF object
-  if(!listTables){
-    if(is.null(fn)) stop("No file name provided!")
-    rpostgis::pgWriteRast(conn = con,
-                          name = fn,
-                          raster = object,
-                          overwrite = T,
-                          blocks = c(10))
-    ## 4. Disconnect
-    RPostgres::dbDisconnect(con)
-  } else if (listTables) {
-    allTables<-data.table::data.table(rpostgis::pgListRast(conn = con), key = "schema_name")
-    allTables<-allTables["public"][]
-    ## 4. Disconnect
-    RPostgres::dbDisconnect(con)
-    ## 5. return
-    return(allTables)
+  allTables<-NULL
+  if(DBtype == "pg"){
+    ## 1. Connection details
+    con <- DBI::dbConnect(RPostgres::Postgres(),
+                          host = host,
+                          dbname = dbname,
+                          port = 5432,
+                          user = user,
+                          password = password)
+    ## 2. write the SF object
+    if(!listTables){
+      if(is.null(fn)) stop("No file name provided!")
+      rpostgis::pgWriteRast(conn = con,
+                            name = fn,
+                            raster = object,
+                            overwrite = T,
+                            blocks = c(10))
+      ## 4. Disconnect
+      RPostgres::dbDisconnect(con)
+    } else if (listTables) {
+      allTables<-data.table::data.table(rpostgis::pgListRast(conn = con), key = "schema_name")
+      allTables<-allTables["public"][]
+      ## 4. Disconnect
+      RPostgres::dbDisconnect(con)
+    }
+  } else if (DBtype == "local" & !is.null(localpath)) {
+    ##############################################
+    ## Local Files
+
+    if(!listTables){
+      if(dir.exists(localpath)) {
+        raster::writeRaster(object,
+                            filename = file.path(localpath, paste0(fn, ".tif")),
+                            format = "GTiff",
+                            overwrite = T)
+      } else {
+        stop("Local directory not available")
+      }
+    } else if(listTables) {
+      if(dir.exists(localpath)) {
+        allTables<-list.files(localpath, pattern = ".tif$")
+        if(length(allTables)>0){
+          allPath<-file.path(localpath, allTables)
+          allInfo<-file.info(allPath)
+          allTables<-data.table(cbind(allTables, allInfo[,c(1,4)]))
+          names(allTables)<-c("table_name", "size", "creation_date")
+        } else {
+          allTables<-data.table(table_name=character(0), size=numeric(0), creation_date=character(0))
+        }
+      }
+    }
+
   }
+  ## 5. return
+  return(allTables)
 }
 
 readRASfromDB<-function(dbname = NULL, host = "localhost",
                         user = NULL, password = NULL,
-                        fn = NULL, listTables = F) {
-  # library(DBI)
-  # library(RPostgres); library(rpostgis); library(RPostgreSQL)
-  # library(dplyr)
-  # library(sf); library(raster)
-  ##############################################
-  ## PostGis
-  ## 1. Run bash for set-up
-  ## 2. Activate Extension with superuser
-  # suppressMessages(
-  # rpostgis::pgPostGIS(con, topology = FALSE, tiger = TRUE, sfcgal = TRUE,
-  #           exec = TRUE)
-  # )
-  ## 1. Connection details
-  con <- DBI::dbConnect(RPostgres::Postgres(),
-                        host = host,
-                        dbname = dbname,
-                        port = 5432,
-                        user = user,
-                        password = password)
-  ## 2. write the SF object
-  if(!listTables){
-    if(is.null(fn)) stop("No file name provided!")
-    allTables<-rpostgis::pgGetRast(conn = con,
-                                   name = fn,
-                                   bands = TRUE)
-    ## 4. Disconnect
-    RPostgres::dbDisconnect(con)
-    ## 5. Return
-    return(allTables)
+                        fn = NULL, listTables = F, inShinyApp = T, DBtype = "pg", localpath = NULL) {
+  allTables<-NULL
+  if(DBtype == "pg") {
+    con <- DBI::dbConnect(RPostgres::Postgres(),
+                          host = host,
+                          dbname = dbname,
+                          port = 5432,
+                          user = user,
+                          password = password)
+    ## 2. write the SF object
+    if(!listTables){
+      if(is.null(fn)) stop("No file name provided!")
+      allTables<-rpostgis::pgGetRast(conn = con,
+                                     name = fn,
+                                     bands = TRUE)
+      ## 4. Disconnect
+      RPostgres::dbDisconnect(con)
 
-  } else if (listTables) {
-    allTables<-data.table::data.table(rpostgis::pgListRast(conn = con), key = "schema_name")
-    allTables<-allTables["public"][]
-    ## 4. Disconnect
-    RPostgres::dbDisconnect(con)
-    ## 5. return
-    return(allTables)
+    } else if (listTables) {
+      allTables<-data.table::data.table(rpostgis::pgListRast(conn = con), key = "schema_name")
+      allTables<-allTables["public"][]
+      ## 4. Disconnect
+      RPostgres::dbDisconnect(con)
+    }
+  } else if (DBtype == "local" & !is.null(localpath)) {
+    ##############################################
+    ## Local Files
+
+    if(!listTables){
+      if(dir.exists(localpath)) {
+        fn<-tools::file_path_sans_ext(fn)
+        allTables<-raster::raster(file.path(localpath, paste0(fn, ".tif")))
+      } else {
+        stop("Local directory not available")
+      }
+    } else if(listTables) {
+      if(dir.exists(localpath)) {
+        allTables<-list.files(localpath, pattern = ".tif$")
+        if(length(allTables)>0){
+          allPath<-file.path(localpath, allTables)
+          allInfo<-file.info(allPath)
+          allTables<-data.table(cbind(allTables, allInfo[,c(1,4)]))
+          names(allTables)<-c("table_name", "size", "creation_date")
+        } else {
+          allTables<-data.table(table_name=character(0), size=numeric(0), creation_date=character(0))
+        }
+      }
+    }
+
   }
+
+  return(allTables)
+
 }
 
 

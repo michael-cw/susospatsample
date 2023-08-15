@@ -1,13 +1,10 @@
-#' shiny module for  storage selection
+#' shiny UI module for  storage selection
 #'
 #'
 #'
-#' @description this module also works with large data sets,
-#' as it uses two separate functions for the download.
-#' The first function generates the file, and the actual
-#' download is activated by a shinyjs js function, which
-#' is only activated after the file creation is
-#' finished
+#' @description allows to either use local storage in users app dir, or connect
+#' to a postgis-postgres database if available. in the latter case checks provided
+#' details and passes them on for further processing.
 #'
 #' @noRd
 #' @keywords internal
@@ -36,15 +33,15 @@ datastoreUI<-function(id,
                             or to use the docker installation.
                             ")),
     fluidRow(
-      column(2),
-      column(8,
+      column(1),
+      column(10,
              radioButtons(ns("datastore"),
                           label = "Data Storage of Input Data?",
                           choices = c("PostgreSQL"=1, "Local Files"=2),
-                          selected = "", inline = T
+                          selected = "", inline = T, width = "10vw"
              )
       ),
-      column(2)
+      column(1)
     ),
     conditionalPanel("input.datastore==1", ns = ns,
                      # Postgres settings --> DB must be setup externally
@@ -59,7 +56,7 @@ datastoreUI<-function(id,
                               textInput(
                                 ns("dbhost"),
                                 "Provide DB host:",
-                                placeholder = "Database Host"
+                                value = "localhost"
                               )
                        )
                      ),
@@ -100,13 +97,26 @@ datastoreUI<-function(id,
     fluidRow(
       column(1),
       column(10,
-             DT::dataTableOutput(ns("storageSummary"), width = "5vw")
+             DT::dataTableOutput(ns("storageSummary"), width = "15vw")
       ),
       column(1)
     ),br()
   )
-  ####################FIN UI####################################################
 }
+
+
+#' shiny SERVER module for  storage selection
+#'
+#'
+#'
+#' @description allows to either use local storage in users app dir, or connect
+#' to a postgis-postgres database if available. in the latter case checks the connection
+#' and returns them on for further processing.in the former, the filepath will be returned
+#'
+#' @noRd
+#' @keywords internal
+
+
 # server
 datastoreSRV <- function(id,
                          home_dir = path.expand("~")) {
@@ -199,9 +209,13 @@ datastoreSRV <- function(id,
         # check validity
         if(stm=="pg") {
           tab<-tryCatch(
-            {writeSFtoDB(listTables = T, user = input$dbuser)},
+            {writeSFtoDB(listTables = T,
+                         user = input$dbuser,
+                         dbname = input$dbname,
+                         host = input$dbhost,
+                         password = input$dbpass)},
             error = function(e) {
-              shiny::showNotification("Invalid Credentials!",
+              shiny::showNotification("INVALID CREDENTIALS OR NO POSTGRES DATABASE AVAILABLE!",
                                       type = "warning")
               return(NULL)
             }
@@ -233,7 +247,7 @@ datastoreSRV <- function(id,
 
       # Table Summary
       output$storageSummary<-DT::renderDataTable({
-        shiny::validate(need(storemode(), message = "Select Storag first!"))
+        shiny::validate(need(storemode(), message = F))
         if(!is.null(storemode()) && storemode()=="local"){
           shinyjs::enable(id = "showDBshape")
           tab<-cbind(c("Storage Mode", "Shape File Storage:", "Raster Storage"),c("Local Directory",shppath(), raspath()))
@@ -267,52 +281,3 @@ datastoreSRV <- function(id,
 }
 
 
-# # TESTING ONLY
-# ui <- fluidPage(
-#   shinyjs::useShinyjs(),
-#   datastoreUI("my_modal")
-# )
-#
-# server <- function(input, output, session) {
-#   storemode<-reactiveVal(NULL); shppath<-reactiveVal(NULL); raspath<-reactiveVal(NULL)
-#   DBname<-reactiveVal(NULL); DBhost<-reactiveVal(NULL); DBuser<-reactiveVal(NULL); DBpass<-reactiveVal(NULL)
-#
-#   storageSetting <- datastoreSRV("my_modal")
-#
-#
-#   observe({
-#     # local store
-#     storemode(storageSetting$storemode())
-#     shppath(storageSetting$shppath())
-#     raspath(storageSetting$raspath())
-#     # remote store
-#     DBname(storageSetting$DBname())
-#     DBhost(storageSetting$DBhost())
-#     DBuser(storageSetting$DBuser())
-#     DBpass(storageSetting$DBpass())
-#     DBname(storageSetting$DBname())
-#
-#
-#   })
-#
-#   observe({
-#     if(!is.null(storemode()) && storemode()=="local"){
-#       print(storemode())
-#       print(shppath())
-#       print(raspath())
-#       shinyjs::enable(id = "showDBshape")
-#
-#     } else if(!is.null(storemode()) && storemode()=="pg"){
-#       print(DBname())
-#       print(DBhost())
-#       print(DBuser())
-#       print(DBpass())
-#       shinyjs::enable(id = "showDBshape")
-#
-#     }
-#
-#   })
-#
-# }
-#
-# shiny::shinyApp(ui,server)

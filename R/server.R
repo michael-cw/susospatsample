@@ -199,7 +199,13 @@ main_server<-function(input, output, session) {
   flSHP<-reactive({
     req(storemode())
     if(storemode()=="pg") {
-      tab<-writeSFtoDB(listTables = T)
+      tab<-writeSFtoDB(listTables = T,
+                       DBtype = storemode(),
+                       dbname = DBname(),
+                       host = DBhost(),
+                       user = DBuser(),
+                       password = DBpass()
+                       )
     } else if(storemode()=="local") {
       req(shppath())
       tab<-writeSFtoDB(listTables = T,
@@ -277,7 +283,21 @@ main_server<-function(input, output, session) {
   })
   ## 3.2. list raster
   flRAS<-reactive({
-    tab<-writeRAStoDB(listTables = T)
+    req(storemode())
+    if(storemode()=="pg") {
+      tab<-writeRAStoDB(listTables = T,
+                        DBtype = storemode(),
+                        dbname = DBname(),
+                        host = DBhost(),
+                        user = DBuser(),
+                        password = DBpass()
+      )
+    } else if(storemode()=="local") {
+      req(raspath())
+      tab<-writeRAStoDB(listTables = T,
+                        DBtype = storemode(),
+                        localpath = raspath())
+    }
     return(tab)
   })
   ## 3.3. show raster
@@ -375,7 +395,12 @@ main_server<-function(input, output, session) {
       tmp.shp<-shapeLoad2_cleanToDB(SHP = tmp.shp[[2]],
                                     shpName = shpFile,
                                     writeToDB = T,
-                                    DBtype = "pg", localpath = NULL)
+                                    DBtype = storemode(),
+                                    dbname = DBname(),
+                                    host = DBhost(),
+                                    user = DBuser(),
+                                    password = DBpass()
+                                    )
     } else if(storemode()=="local"){
       req(shppath())
       tmp.shp<-shapeLoad2_cleanToDB(SHP = tmp.shp[[2]],
@@ -413,7 +438,13 @@ main_server<-function(input, output, session) {
                  {
                    req(storemode())
                    if(storemode()=="pg"){
-                     tmp.shp<-readSHPfromDB(fn = tableName$table_name, inShinyApp = T)
+                     tmp.shp<-readSHPfromDB(fn = tableName$table_name,
+                                            inShinyApp = T,
+                                            DBtype = storemode(),
+                                            dbname = DBname(),
+                                            host = DBhost(),
+                                            user = DBuser(),
+                                            password = DBpass())
                    } else if(storemode()=="local") {
                      req(shppath())
                      tmp.shp<-readSHPfromDB(
@@ -431,7 +462,10 @@ main_server<-function(input, output, session) {
     showNotification("Testing for validity of polygons and applying corrections.",
                      type = "message", id = "simplifyMap3", duration = NULL)
 
-    tmp.shp<-shapeLoad2_cleanToDB(SHP = tmp.shp, writeToDB = F)
+    ## ONLY cleaning, NO writing
+    tmp.shp<-shapeLoad2_cleanToDB(SHP = tmp.shp,
+                                  writeToDB = F
+                                  )
 
     if(!st_is_longlat(tmp.shp)) tmp.shp<-st_transform(tmp.shp, 4326)
     removeNotification(id = "simplifyMap3")
@@ -1091,8 +1125,8 @@ main_server<-function(input, output, session) {
 
         pop_raster<-raster(shpFile)
 
-        ### ATTENTION for the momen only latlong raster work
-        crs(pop_raster)<-"EPSG:4326"
+        ### ATTENTION for the moment only latlong raster work
+        raster::crs(pop_raster)<-"EPSG:4326"
 
       } else if(input$popUpType==3) {
 
@@ -1139,6 +1173,23 @@ main_server<-function(input, output, session) {
       ## 2. Writing
       # writeRAStoDB(object = pop_raster,
       #              fn = tableName)
+      req(storemode())
+      if(storemode()=="pg") {
+        tab<-writeRAStoDB(object = pop_raster,
+                          fn = tableName,
+                          DBtype = storemode(),
+                          dbname = DBname(),
+                          host = DBhost(),
+                          user = DBuser(),
+                          password = DBpass()
+        )
+      } else if(storemode()=="local") {
+        req(raspath())
+        tab<-writeRAStoDB(object = pop_raster,
+                          fn = tableName,
+                          DBtype = storemode(),
+                          localpath = raspath())
+      }
       ###################################
       # Results for info table
       incProgress(0.1, 'Almost done ....')
@@ -1178,9 +1229,24 @@ main_server<-function(input, output, session) {
     shiny::validate(need(harare_landuse3_type1, message = F),
                     need(map_id(), message = F))
     tableName<-map_id()
-
+    print(raspath())
     withProgress(message = 'Loading raster, this may take a while!', value = 0,{
-      pop_raster<-readRASfromDB(fn = tableName$table_name)
+      #pop_raster<-readRASfromDB(fn = tableName$table_name)
+      req(storemode())
+      if(storemode()=="pg") {
+        pop_raster<-readRASfromDB(fn = tableName$table_name,
+                           DBtype = storemode(),
+                           dbname = DBname(),
+                           host = DBhost(),
+                           user = DBuser(),
+                           password = DBpass()
+        )
+      } else if(storemode()=="local") {
+        req(raspath())
+        pop_raster<-readRASfromDB(fn = tableName$table_name,
+                           DBtype = storemode(),
+                           localpath = raspath())
+      }
       incProgress(0.4, "Processing ....")
       ## 2. Process as usual
       ###########################
