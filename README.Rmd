@@ -22,16 +22,68 @@ knitr::opts_chunk$set(
 <!-- badges: end -->
 
 <div align="justify">
-This repository houses the Survey Solutions Spatial Sampling Application[^1]. It's an essential tool for supporting survey sampling and implementation using Spatial Resources along with Survey Solutions Computer Assisted Survey System (CASS).
+This repository contains the Survey Solutions Spatial Sampling Application[^1]. It's an essential tool for supporting survey sampling and implementation using Spatial Resources along with Survey Solutions [Computer Assisted Survey System (CASS)](https://mysurvey.solutions/en/).
 
-Survey Solutions CASS leverages spatial resources in data collection operations. These can include boundary files (specific to an area) in the form of an ESRI shape file or background maps in the form of Tile map packages (.tpk) or geo-tif files (.tif).
+The Survey Solutions CASS leverages spatial resources in survey data collection operations. These can include boundary files (specific to an area) in the form of an ESRI shape file or background maps in the form of Tile map packages (.tpk) or geo-tif files (.tif).
 
-For a comprehensive guide on utilizing spatial resources in Survey Solutions, refer to the following links:
+For a details on utilizing spatial resources in Survey Solutions, refer to the following links:
 
 - [Shapefile Maps](https://docs.mysurvey.solutions/interviewer/special/shape-file-overlay/)
 - [Map Formats](https://docs.mysurvey.solutions/headquarters/mapsmanage/map-formats/)
 
-The application's modules, built on R's shiny framework, provide a user interface. Visualization of the sample is carried out using the [deck.gl framework](https://deck.gl) through the mapdeck package.
+The application's modules, built on R's Shiny framework, provide a Graphical User Interface. Visualization of the sampling frame and sample is carried out using the [deck.gl framework](https://deck.gl) through the mapdeck package or by using leaflet maps. 
+
+Furthermore the application is part of a larger set of tools to support the use of spatial resources in survey sampling and data collection. Other currently available applications are:
+
+- [Grid Sample Replacement Application](https://github.com/michael-cw/susogrdframe)
+- [Desktop Listing Application](https://github.com/michael-cw/susolisting)
+
+
+## Main User Features
+
+- **Sampling Frame Flexibility**: Supports both regular grid and irregular clusters.
+- **Population Data Integration**: Easily include or combine population data in raster or points format.
+- **Supported Sampling Strategies**:
+    - Random or Probability Proportional to Size sampling at the area level, stratified or unstratified.
+    - Spatially balanced sampling at the points level.
+- **Survey Resource Creation**: 
+    - Frame (csv format)
+    - Sample with weights (csv format)
+    - Shape file boundaries for Survey Solutions CAPI application
+    - Base maps for Survey Solutions CAPI application
+    - Sampling Report as word document
+- **Storage Modes**:
+    - Local Storage
+    - PostGIS-PostgreSQL (installation not included in the package)
+- **Available Map Services**:
+    - Single Layer Geo Tiff
+    - ESRI tile package creation (Requires [ESRI tile server](https://developers.arcgis.com/documentation/mapping-apis-and-services/data-hosting/services/image-tile-service/))
+    
+
+#### Technical Features
+
+- **Deployment**: Operates on local installation, Shiny server and RS connect.
+- **Modular Design**: Written in shiny modules for reusability, easy extension, and improved code readability.
+- **High-Performance Capabilities**: Utilizes tools like:
+    - [Data.table](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-intro.html) 
+    - [Fst](http://www.fstpackage.org/)
+    - [Fasterize](https://cran.r-project.org/web/packages/fasterize/vignettes/using-fasterize.html)
+    - Multi-core computation 
+
+#### Admin Interface
+
+- **Selection of Map Providers**: 
+    - ESRI World Imagery (no key) 
+    - Open Street Maps (no key) 
+    - [Mapbox (with key)](https://www.mapbox.com/)
+    - ESRI map server (with key).
+- **Data Storage Options**: 
+    - Postgis – Postgres (requires server installation)
+    - local storage.
+- **Survey Solutions Integration**:
+    - Connect to Survey Solutions API
+    - Upload base maps and boundary files
+    - Assign/un-assign maps to field teams.
 
 
 ## Installation
