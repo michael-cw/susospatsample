@@ -158,18 +158,21 @@ main_server<-function(input, output, session) {
   })
 
   # update GADM selection
-  # observe({
-  #   #fpdata<-system.file("ui_inputs", package = "susospatsample")
-  #   fpdata<-file.path("C:/Users/micha/Documents/susospatsample","inst", "ui_inputs")
-  #   ISO3<-data.table::as.data.table(readr::read_csv(file.path(fpdata, "iso3_country_minimal.csv")))
-  #   gadmISO3<-rownames(ISO3)
-  #   names(gadmISO3)<-ISO3$name
-  #
-  #   # update select
-  #   shiny::updateSelectInput(session = session,
-  #                            inputId = "gadmISO3_sel",
-  #                            choices = gadmISO3)
-  # })
+  observe({
+    ISO3<-susospatsample::ISO3
+    gadmISO3<-rownames(ISO3)
+    names(gadmISO3)<-ISO3$name
+
+    # update select
+    shiny::updateSelectizeInput(session = session,
+                                inputId = "gadmISO3_sel",
+                                choices = gadmISO3,
+                                options = list(
+                                  placeholder = 'Select Country',
+                                  onInitialize = I('function() { this.setValue(""); }')
+                                )
+    )
+  })
   # #################################################################################
   ##              PopUp for Detail and Load Data - SHAPE
   # 1. SHOW Existing Files MODAL
@@ -489,17 +492,19 @@ main_server<-function(input, output, session) {
   #################################################################################
   observeEvent(input$gadmISO3_sel, {
     ## reset!
+    req(input$gadmISO3_sel)
     withProgress(message = 'Loading map, this may take a while!', value = 0,{
       callModule(stratumVariableUpdateSvr,
                  "strVarSel",
                  dataset = NULL)
       ##  Load Country Codes for GADM
-      ISO3<-as.data.table(read_csv("data/ui_inputs/iso3_country_minimal.csv"))
-      iso3_sel<-ISO3[as.numeric(input$gadmISO3_sel), iso3]
+      ISO3<-as.data.table(susospatsample::ISO3)
+      print(input$gadmISO3_sel)
+      iso3_sel<<-ISO3[as.numeric(input$gadmISO3_sel), iso3]
 
       ## i. LOAD MAP
       ## Level 1 (standard)
-      tmp.shp<-try(GADM.getData('GADM',country = iso3_sel, level = 1,  path = "data/GADMmaps", sp.Library = "sf"), silent = T)
+      tmp.shp<-try(GADM.getData('GADM',country = iso3_sel, level = 1,  path = file.path(fp(), "GADMmaps"), sp.Library = "sf"), silent = T)
       incProgress(0.2)
       ##  Check Level 0 if one fails
       if (class(tmp.shp)[1]=="try-error") try(GADM.getData('GADM', country = iso3_sel, level = 0,  path = "data/GADMmaps", sp.Library = "sf"), silent = T)

@@ -115,10 +115,16 @@ main_ui<-function(request){
                                                                        column(width=6,
                                                                               conditionalPanel("input.sampType=='Random Grid'",
                                                                                                # GADM 3 is included https://gadm.org/data.html
-                                                                                               selectInput("gadmISO3_sel",
-                                                                                                           "Country Boundaries",
-                                                                                                           choices = NULL #gadmISO3()
-                                                                                               ))),
+                                                                                               selectizeInput("gadmISO3_sel",
+                                                                                                              "Country Boundaries",
+                                                                                                              choices = NULL,
+                                                                                                              options = list(
+                                                                                                                placeholder = 'Requires Points Data',
+                                                                                                                onInitialize = I('function() { this.setValue(""); }')
+                                                                                                              )
+                                                                                               )
+                                                                              )
+                                                                       ),
                                                                        column(width=6,
                                                                               # Shape File Upload
                                                                               fileInput("new_shape", "Upload Shapefile",

@@ -11,6 +11,8 @@ GADM.getData<-function(name="GADM",country,level,path, sp.Library="sp"){
   DIR<-ifelse(sp.Library=="sp", "/Rsp/", "/Rsf/")
   tf<-tempfile()
 
+  if(!dir.exists(path)) dir.create(path, recursive = T)
+
   ##  1. Create path
   file.name<-paste0("gadm", v, "_", country, "_", level, "_", sp.Library, ".rds")
   f.path<-file.path(path, file.name)
