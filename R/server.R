@@ -339,7 +339,13 @@ main_server<-function(input, output, session) {
   #################################################################################
   ## 1. UPLOAD shape
   observeEvent(input$new_shape, {
-    ## reset!
+    ## Check for storemode
+    if(is.null(storemode())) {
+      showNotification("Please select storage mode first!",
+                       type = "warning", id = "no_storage", duration = NULL)
+      req(FALSE)
+    }
+    ## reset stratum variable module
     callModule(stratumVariableUpdateSvr,
                "strVarSel",
                dataset = NULL)
@@ -349,47 +355,61 @@ main_server<-function(input, output, session) {
     unlink(paste0(shpFiles, "/*"))
     unzip(input$new_shape$datapath, exdir = shpFiles)
     fileList<-list.files(shpFiles)
-    shpFile<-fileList[grep(".shp$", fileList)]
-    nshp<-length(shpFile)
-    if (nshp==0) {
+    ## add Geo Package database format-->How to deal with multiple layers? Modal?
+    fex<-tools::file_ext(fileList)
+    if("gpkg"%in%fex) {
+      fileList[grep(".gpkg$", fileList)]
+
+      # TBC
+
+    } else if("shp"%in%fex){
+      shpFile<-fileList[grep(".shp$", fileList)]
+      nshp<-length(shpFile)
+      if (nshp==0) {
+        showModal(modalDialog(
+          title = "Wrong Format!",
+          "Your file is not provided in the correct format (ESRI Shapefile, Single Folder). Please check and upload again",
+          easyClose = TRUE,
+          footer = NULL
+        ))
+
+      } else if (nshp>1) {
+        showModal(modalDialog(
+          title = "More than one file!",
+          "You uploaded more than one boundary files. Your files will be aggregated to a single file",
+          easyClose = TRUE,
+          footer = NULL
+        ))
+
+      }
+      shiny::validate(need(shpFile, message = F))
+      ## ii. Read the shape
+      if (nshp==1) {
+        tmp.shp<-shapeLoad2(path = shpFiles, lay = shpFile, sp.Library="sf")
+      } else if (nshp>1) {
+        tmp.shplist<-vector("list", length = nshp)
+        for(i in 1:nshp) {
+          tmp.shplist[[i]]<-sf::st_read(file.path(shpFiles, shpFile[i]), quiet = TRUE)
+        }
+        #CHECKtmp.shplist<<-tmp.shplist
+        tmp.shp<-do.call(rbind, tmp.shplist)
+
+        tmp.shp<-list(st_crs(tmp.shp)[[2]], tmp.shp)
+      }
+    } else {
       showModal(modalDialog(
         title = "Wrong Format!",
         "Your file is not provided in the correct format (ESRI Shapefile, Single Folder). Please check and upload again",
         easyClose = TRUE,
         footer = NULL
       ))
-
-    } else if (nshp>1) {
-      showModal(modalDialog(
-        title = "More than one file!",
-        "You uploaded more than one boundary files. Your files will be aggregated to a single file",
-        easyClose = TRUE,
-        footer = NULL
-      ))
+      req(FALSE)
 
     }
-    shiny::validate(need(shpFile, message = F))
-    ## ii. Read the shape
-    if (nshp==1) {
-      tmp.shp<-shapeLoad2(path = shpFiles, lay = shpFile, sp.Library="sf")
-    } else if (nshp>1) {
-      tmp.shplist<-vector("list", length = nshp)
-      for(i in 1:nshp) {
-        tmp.shplist[[i]]<-sf::st_read(file.path(shpFiles, shpFile[i]), quiet = TRUE)
-      }
-      #CHECKtmp.shplist<<-tmp.shplist
-      tmp.shp<-do.call(rbind, tmp.shplist)
 
-      tmp.shp<-list(st_crs(tmp.shp)[[2]], tmp.shp)
-    }
     new_shp$shp.source<-"Upload"
 
-    ## iii. Check for storemode
-    if(is.null(storemode())) {
-      showNotification("Please select storage mode first!",
-                       type = "warning", id = "no_storage", duration = NULL)
-      req(FALSE)
-    }
+
     ######################################################################
     ## clean shape file and send to DB
     showNotification("Testing for validity of polygons and applying corrections.",
@@ -403,13 +423,16 @@ main_server<-function(input, output, session) {
                                     host = DBhost(),
                                     user = DBuser(),
                                     password = DBpass()
-                                    )
+      )
     } else if(storemode()=="local"){
       req(shppath())
-      tmp.shp<-shapeLoad2_cleanToDB(SHP = tmp.shp[[2]],
-                                    shpName = shpFile[1],
-                                    writeToDB = T,
-                                    DBtype = "local", localpath = shppath())
+      tmp.shp<-runWithModalOnError(
+        shapeLoad2_cleanToDB(SHP = tmp.shp[[2]],
+                             shpName = shpFile[1],
+                             writeToDB = T,
+                             DBtype = "local", localpath = shppath())
+      )
+
     } else {
       tmp.shp<-shapeLoad2_cleanToDB(SHP = tmp.shp[[2]],
                                     shpName = shpFile,
@@ -3136,7 +3159,7 @@ main_server<-function(input, output, session) {
   ## 2. Call Module
   dwl_reportSRV("samplingReport",
                 fn = "SamplingReport",
-                wordstyles = file.path(system.file("rmdfiles", package = "susoquestionnairemanual"), "FINAL_report_for_download.docx"),
+                wordstyles = file.path(system.file("rmdfiles", package = "susospatsample"), "FINAL_report_for_download.docx"),
                 content = report_content,
                 type = "word")
 

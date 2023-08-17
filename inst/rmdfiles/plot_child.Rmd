@@ -1,0 +1,22 @@
+```{r include=FALSE}
+#library(ggplot2)
+knitr::opts_chunk$set(echo = FALSE, comment = NULL, warning = F, message = F)
+```
+
+
+### `r paste("Section:" , line)`
+
+```{r include=F, echo=FALSE, eval=TRUE}
+out1<-NULL
+for (i in 1:nrow(vv)) {
+vvv<-vv[i]
+env=new.env()
+out1 = c(out1, knitr::knit_child('plot_child_child.Rmd', quiet=T))
+}
+
+```
+
+`r paste(out1, collapse = '\n')`
+
+<br><br><br>
+

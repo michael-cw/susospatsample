@@ -10,7 +10,7 @@
 #' visible within the boundaries on a Google map. The enumerate buildings can then be used for the
 #' second stage sampling frame and to draw the survey units within the cluster from it.
 #'
-#' @param mapwidget.option Selection of map at start-up
+#' @param mapwidget.option Selection of map at start-up, mapdeck or leaflet, defaults to leaflet if NULL
 #' @param google_ai_score_map_url Url for base map to google AI, unlikely to change!
 #' @param google_ai_score_url URL for google AI scores, unlikely to change!
 #' @param bufferForSuSoBounds Buffere for Survey Solutions geo-fencing
@@ -20,14 +20,30 @@
 #' @export
 
 runSpatSampleAppServer <- function(
-    mapwidget.option = c("mapdeck", "leaflet"),
+    mapwidget.option = c("leaflet", "mapdeck"),
     google_ai_score_url = "https://storage.googleapis.com/open-buildings-data/v1/score_thresholds_s2_level_4.csv",
     google_ai_score_map_url = "https://sites.research.google/open-buildings/tiles.geojson",
     bufferForSuSoBounds = 5,
     pointsLimit = 100000) {
+
   shiny::addResourcePath("www", system.file("www", package = "susospatsample"))
   shiny::addResourcePath("ui_inputs", system.file("ui_inputs", package = "susospatsample"))
-  shiny::addResourcePath("rmdfiles", system.file("rmdfiles", package = "susoquestionnairemanual"))
+  shiny::addResourcePath("rmdfiles", system.file("rmdfiles", package = "susospatsample"))
+
+  # variables check
+  stopifnot(
+    # numeric inputs
+    is.numeric(bufferForSuSoBounds),
+    is.numeric(pointsLimit),
+    # web
+    curl::has_internet(),
+    !httr::http_error(google_ai_score_url),
+    !httr::http_error(google_ai_score_map_url)
+  )
+
+  # option check
+  mapwidget.option<-match.arg(mapwidget.option)
+
   # get original options
   original_options <- list(
     shiny.maxRequestSize = getOption("shiny.maxRequestSize"),

@@ -1,0 +1,71 @@
+---
+title: "Questionnaire Manual"
+author: "Powered by Survey Solutions"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    self_contained: true
+    css: style_qManual.css
+    toc: false
+
+params:
+    questionnaireDT: NA
+    qTitle: NA
+    qValidations: NA
+---
+
+
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NULL, warning = F, message = F)
+
+
+```
+
+
+
+```{r plot-dev, include=F, echo=FALSE, eval=TRUE}
+dtQ<-params$questionnaireDT
+
+out<-NULL
+for (line in unique(dtQ$Section)) {
+vv<-v<-dtQ[Section == line]
+
+env=new.env()
+out = c(out, knitr::knit_child('plot_child.Rmd', quiet=T))
+}
+#<h2 class='qTitle'> `r paste0(params$qTitle)` </h2>
+```
+
+<br>
+
+## `r paste0(params$qTitle)`{.tabset .tabset-fade .tabset-pills}
+
+<hr class = "head">
+
+`r paste(out, collapse = '\n')`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

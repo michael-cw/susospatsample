@@ -72,8 +72,9 @@ Other currently available applications are:
 
 #### Technical Features
 
-- **Deployment**: Operates on local installation, Shiny server and RS
-  connect.
+- **Deployment**: Operates on local installation, [Shiny
+  server](https://posit.co/products/open-source/shinyserver/) and [Posit
+  Connect](https://posit.co/products/enterprise/connect/).
 - **Modular Design**: Written in shiny modules for reusability, easy
   extension, and improved code readability.
 - **High-Performance Capabilities**: Utilizes tools like:
@@ -90,7 +91,8 @@ Other currently available applications are:
   - [Mapbox (with key)](https://www.mapbox.com/)
   - ESRI map server (with key).
 - **Data Storage Options**:
-  - Postgis – Postgres (requires server installation)
+  - [PostGIS-PostgreSQL](https://postgis.net/) (requires server
+    installation)
   - local storage.
 - **Survey Solutions Integration**:
   - Connect to Survey Solutions API

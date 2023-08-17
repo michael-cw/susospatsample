@@ -1,6 +1,8 @@
-#############################################
-##  New function to load GADM data
-##  replaces getData in raster for GADM only
+#' GADM 3.6 get data function
+#'
+#' @noRd
+#' @keywords internal
+#'
 
 # https://biogeo.ucdavis.edu/data/gadm3.6/Rsp/gadm36_AUT_0_sp.rds
 # https://biogeo.ucdavis.edu/data/gadm3.6/Rsp/gadm36_AUT_1_sp.rds

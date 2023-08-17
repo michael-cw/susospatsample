@@ -1,0 +1,100 @@
+h2 { 
+    text-align: center;
+    display: block;
+    font-size: 1.5em;
+    margin-top: 0.67em;
+    margin-bottom: 0.67em;
+    margin-left: 0;
+    margin-right: 0;
+    font-weight: bold;
+    color: red;
+  }
+
+cite.sm {
+  font-size: 0.8em;
+  text-align: center;
+  font-weight: bold;
+}
+
+hr.head {
+  border: 2px solid #0d47a1;
+}
+
+h1.title {
+  background-color: #0d47a1;
+  color: white;
+  text-align: center;
+}
+h4.author {
+  text-align: center;
+  color: #0d47a1;
+}
+
+h4.date {
+  text-align: center;
+  color: #0d47a1;
+}
+
+h1 {
+  text-align: center;
+}
+
+h2.qTitle {
+  font-size: 2em;
+  text-align: center;
+  color: red;
+}
+
+h4 {
+  font-size: 1.3em;
+  font-weight: bold;
+  text-align: center;
+  color: red;
+}
+
+h5 {
+  font-size: 1.3em;
+  font-weight: bold;
+  font-style: italic;
+  text-align: center;
+  color: #98252B;
+}
+
+div.qInstr {
+  text-align: justify;
+  display: block;
+  font-size: 1.3em;
+  margin-top: 0.67em;
+  margin-bottom: 0em;
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: bold;
+  color: #0d47a1;
+}
+
+div.qExemp {
+  text-align: justify;
+  display: block;
+  font-size: 1.3em;
+  margin-top: 0.67em;
+  margin-bottom: 0.67em;
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: italic;
+  color: #0d47a1;
+}
+
+div.qInfo {
+  display: block;
+  font-size: 1.1em;
+  font-style: italic;
+  text-align: center;
+  color: #98252B;
+}
+
+
+/* Dashed red border */
+hr {
+  border-top: 1.3px dashed red;
+}
+

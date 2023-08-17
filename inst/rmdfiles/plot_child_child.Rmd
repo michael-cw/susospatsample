@@ -1,0 +1,22 @@
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NULL, warning = F, message = F)
+```
+
+#### `r paste("QUESTION:" ,vvv$QuestionText)`
+
+<div class = "qInfo">
+`r paste("<b>Type:</b>" ,vvv$type, "; <b>Featured:</b>" ,ifelse(vvv$Featured, "Yes", "No"))`
+</div>
+<br>
+<div class = "qInstr"> `r paste(vvv$Instruction)`</div>
+<br>
+
+
+##### Typical Example
+<br>
+<div class = "qExemp"> `r paste(vvv$Example)`</div>
+<br>
+
+
+
+<br><br>
