@@ -71,8 +71,8 @@ download_csv_server <- function(id,
           fn<-file.path(tempdir(), paste0(file_name(), ".csv"))
           fnzip<-file.path(tempdir(), paste0(file_name(), ".zip"))
           on.exit(
-            file.remove(fnzip),
-            file.remove(fn)
+            {if(file.exists(fnzip)) file.remove(fnzip)},
+            {if(file.exists(fn)) file.remove(fn)}
           )
           file.copy(fnzip, file)
         }, contentType = "application/zip")
