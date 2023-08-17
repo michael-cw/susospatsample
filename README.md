@@ -15,8 +15,8 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 
 This repository contains the Survey Solutions Spatial Sampling
 Application[^1]. It’s an essential tool for supporting survey sampling
-and implementation using Spatial Resources along with Survey Solutions
-[Computer Assisted Survey System
+and implementation using Spatial Resources along with the [Survey
+Solutions Computer Assisted Survey System
 (CASS)](https://mysurvey.solutions/en/).
 
 The Survey Solutions CASS leverages spatial resources in survey data
@@ -24,18 +24,24 @@ collection operations. These can include boundary files (specific to an
 area) in the form of an ESRI shape file or background maps in the form
 of Tile map packages (.tpk) or geo-tif files (.tif).
 
-For a details on utilizing spatial resources in Survey Solutions, refer
-to the following links:
+For details on utilizing spatial resources in Survey Solutions, refer to
+the following links:
 
 - [Shapefile
   Maps](https://docs.mysurvey.solutions/interviewer/special/shape-file-overlay/)
 - [Map
   Formats](https://docs.mysurvey.solutions/headquarters/mapsmanage/map-formats/)
 
-The application’s modules, built on R’s Shiny framework, provide a
-Graphical User Interface. Visualization of the sampling frame and sample
-is carried out using the [deck.gl framework](https://deck.gl) through
-the mapdeck package or by using leaflet maps.
+The application is built with R’s Shiny framework to provide an
+*intuitive* Graphical User Interface (GUI). Visualization of the
+sampling frame and the sample is carried out using the [deck.gl
+framework](https://deck.gl) through the [mapdeck
+package](https://cran.r-project.org/web/packages/mapdeck/vignettes/mapdeck.html)
+or the well familiar [leaflet
+package](https://rstudio.github.io/leaflet/)[^2]. The sampling
+approaches currently incorporated have been applied in survey
+operations, and therefore the current (but also future features)
+incorporate a wealth of user feedback for which we are very greatful.
 
 Furthermore the application is part of a larger set of tools to support
 the use of spatial resources in survey sampling and data collection.
@@ -61,7 +67,7 @@ Other currently available applications are:
   - Sample with weights (csv format)
   - Shape file boundaries for Survey Solutions CAPI application
   - Base maps for Survey Solutions CAPI application
-  - Sampling Report as word document
+  - Sampling Report as Word document
 - **Storage Modes**:
   - Local Storage
   - PostGIS-PostgreSQL (installation not included in the package)
@@ -75,13 +81,14 @@ Other currently available applications are:
 - **Deployment**: Operates on local installation, [Shiny
   server](https://posit.co/products/open-source/shinyserver/) and [Posit
   Connect](https://posit.co/products/enterprise/connect/).
-- **Modular Design**: Written in shiny modules for reusability, easy
-  extension, and improved code readability.
+- **Modular Design**: Written in [Shiny
+  modules](https://shiny.posit.co/r/articles/improve/modules/) for
+  reusability, easy extension, and improved code readability.
 - **High-Performance Capabilities**: Utilizes tools like:
   - [Data.table](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-intro.html)
   - [Fst](http://www.fstpackage.org/)
   - [Fasterize](https://cran.r-project.org/web/packages/fasterize/vignettes/using-fasterize.html)
-  - Multi-core computation
+  - Multi-core computation[^3]
 
 #### Admin Interface
 
@@ -89,8 +96,9 @@ Other currently available applications are:
   - ESRI World Imagery (no key)
   - Open Street Maps (no key)
   - [Mapbox (with key)](https://www.mapbox.com/)
-  - ESRI map server (with key).
-- **Data Storage Options**:
+  - [ESRI map server (with
+    key)]((https://developers.arcgis.com/documentation/mapping-apis-and-services/data-hosting/services/image-tile-service/))).
+- **Selection of Storage Mode**:
   - [PostGIS-PostgreSQL](https://postgis.net/) (requires server
     installation)
   - local storage.
@@ -199,3 +207,11 @@ improve the application.
     Forced Displacement](https://www.jointdatacenter.org/) as well as
     the [World Bank’s Knowledge For Change Programm
     (KCP)](https://www.worldbank.org/en/programs/knowledge-for-change/brief/2022-knowledge-for-change-call-for-proposals-and-application-procedures).
+
+[^2]: Due to capacity limitations of the leaflet package some large data
+    visualizations are only available when using mapdeck mode. Please be
+    aware, that currently there may be an issue with mapdeck when using
+    the lates R version on Windows systems, see
+    [here](https://github.com/SymbolixAU/mapdeck/issues/359).
+
+[^3]: Subject to system resources.

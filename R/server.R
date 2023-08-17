@@ -426,7 +426,7 @@ main_server<-function(input, output, session) {
       )
     } else if(storemode()=="local"){
       req(shppath())
-      tmp.shp<-runWithModalOnError(
+      tmp.shp<-.runWithModalOnError(
         shapeLoad2_cleanToDB(SHP = tmp.shp[[2]],
                              shpName = shpFile[1],
                              writeToDB = T,
@@ -522,8 +522,7 @@ main_server<-function(input, output, session) {
                  dataset = NULL)
       ##  Load Country Codes for GADM
       ISO3<-as.data.table(susospatsample::ISO3)
-      print(input$gadmISO3_sel)
-      iso3_sel<<-ISO3[as.numeric(input$gadmISO3_sel), iso3]
+      iso3_sel<-ISO3[as.numeric(input$gadmISO3_sel), iso3]
 
       ## i. LOAD MAP
       ## Level 1 (standard)
@@ -1566,7 +1565,7 @@ main_server<-function(input, output, session) {
     if(dfgeo=="GEOMETRY") DF %>% st_cast("MULTIPOLYGON")
 
     # Clean stratvar string
-    DF[[input$`strVarSel-strat_var`]]<-stringr::str_remove_all(DF[[input$`strVarSel-strat_var`]], "[^[:alnum:]]")
+    #DF[[input$`strVarSel-strat_var`]]<-stringr::str_remove_all(DF[[input$`strVarSel-strat_var`]], "[^[:alnum:]]")
 
     if(nrow(DF)!=length(unique(DF[,names(DF)==input$`strVarSel-strat_var`, drop = T]))){
       DF<-DF %>% group_by(.data[[input$`strVarSel-strat_var`]]) %>% summarise(Count=n())
@@ -1591,28 +1590,39 @@ main_server<-function(input, output, session) {
   ##    - this triggers the actual processing!
   observeEvent(input$conf1, {
     if(input$subSTRAT == "Yes") {
-      #############################
-      ## sub stratum pre-processing
+      # SUB STRATUM PRE-PROCESSING
+      # i. get ids
       rIDs<-polySelFullOuter$ID
-      tmp.shp<-harare_landuse3_type1_sub()
-      tmp.shp.main<-harare_landuse3_type1()
-      shiny::validate(need(length(rIDs)>0, message = "Nothing selected"))
-      #names(tmp.shp)<-c(input$`strVarSel-strat_var`,"Pop","geometry")
-      ## SUBSET mini map
-      tmp.shp$stratum_numeric<-tmp.shp[[input$`strVarSel-strat_var`]]
-      tmp.shp<-tmp.shp[rIDs, ]
-      ## MERGE sub with full set
-      #tmp.shp<-merge(tmp.shp.main, st_set_geometry(tmp.shp, NULL))
-      tmp.shp<-tmp.shp.main[tmp.shp,]
+      # check if selection was done
+      if(is.null(rIDs) || length(rIDs)==0) {
+        shiny::showModal(modalDialog(
+          title = HTML("<div align='center'>No Selection</div>"),
+          HTML(paste("<div align='center'>You have not selected any areas.</div>")),
+          easyClose = F
+        ))
+        #req(FALSE)
+
+      } else {
+        # ii. get selection shape
+        tmp.shp<-harare_landuse3_type1_sub()
+        # iii. get selection names
+        rIDsNAME<-tmp.shp %>% dplyr::pull(dplyr::all_of(input$`strVarSel-strat_var`))
+        rIDsNAME<-rIDsNAME[rIDs]
+        shiny::validate(need(length(rIDsNAME)>0, message = F))
+        # iv. get main boundaries
+        tmp.shp.main<-harare_landuse3_type1()
+        tmp.shp<-tmp.shp.main %>% filter(.data[[input$`strVarSel-strat_var`]] %in% rIDsNAME)
+        tmp.shp$stratum_numeric<-tmp.shp[[input$`strVarSel-strat_var`]]
+        new_shp$harare_landuse3_type1_sub<-tmp.shp
+
+      }
     } else {
       ##################################
       ## full frame pre-processing
       tmp.shp<-new_shp$harare_landuse3_type1
       tmp.shp$stratum_numeric<-tmp.shp[[input$`strVarSel-strat_var`]]
+      new_shp$harare_landuse3_type1_sub<-tmp.shp
     }
-
-    new_shp$harare_landuse3_type1_sub<-tmp.shp
-
   }, ignoreInit = T)
   #####################################################
   ## 2. Directly to sampling
@@ -1637,9 +1647,10 @@ main_server<-function(input, output, session) {
   ##  3.2. GRID/RASTER Creation                                                   #
   #################################################################################
   observeEvent(input$conf1,{
-    removeModal()
+
     tmp.shp<-new_shp$harare_landuse3_type1_sub
     shiny::req(tmp.shp)
+    removeModal()
     #shiny::validate(need(input$cell_side, message = F))
     shinyjs::enable("dwl_frame_table")
     shinyjs::enable("genSamp")

@@ -4,10 +4,10 @@
 #' @keywords internal
 #'
 
-runWithModalOnError <- function(func, ...) {
+.runWithModalOnError <- function(func) {
 
   result <- tryCatch({
-    func(...)
+    func
   }, error = function(err) {
     # Display the error message in a Shiny modal
     shiny::showModal(modalDialog(

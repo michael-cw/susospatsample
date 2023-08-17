@@ -74,6 +74,7 @@ Imports:
     SurveySolutionsAPI,
     terra,
     tools,
+    waiter,
     withr,
     zip
 Encoding: UTF-8

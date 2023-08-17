@@ -17,6 +17,7 @@ mapadminUI<-function(id) {
     shinyWidgets::useShinydashboard(),
     shinyjs::useShinyjs(),
     shinyalert::useShinyalert(),
+    waiter::use_waiter(),
     fluidRow(
       shinydashboard::box(width = 6, status = "success", height = "510px",
                           solidHeader = T, background = NULL,
@@ -288,34 +289,63 @@ mapadminSRV <- function(id, boundaryfile=reactive({NULL}), mapfile=reactive({NUL
       observeEvent(input$suso_shape, {
         shiny::req(boundaryfile())
         fp<-boundaryfile()
+        waiter::waiter_show(
+          color = "rgba(13, 71, 161, 0.7)",
+          html = tagList(
+            waiter::spin_fading_circles(),
+            "Uploading Boundary Files ..."
+          )
+        )
         #upcheck<-SurveySolutionsAPI::suso_mapupload(workspace = input$susoWS, path_to_zip = fp)
-        upcheck<-suso_mapupload2(workspace = input$susoWS, path_to_zip = fp)
-
-        if(nrow(upcheck)>0) {
+        upcheck<-.runWithModalOnError(suso_mapupload2(workspace = input$susoWS, path_to_zip = fp))
+        # reload maps table
+        if(!is.null(upcheck) && nrow(upcheck)>0) {
           tab<-SurveySolutionsAPI::suso_mapinfo(workspace = input$susoWS)
+          tab<-.loopForMapsApi(tab, workspace = input$susoWS)
           maptablequery(tab)
         }
+        waiter::waiter_hide()
       }, ignoreInit = T)
+
       # Map file Upload
       observeEvent(input$suso_raster, {
         shiny::req(mapfile())
         fp<-mapfile()
+        waiter::waiter_show(
+          color = "rgba(13, 71, 161, 0.7)",
+          html = tagList(
+            waiter::spin_fading_circles(),
+            "Uploading Base Maps ..."
+          )
+        )
         #upcheck<-SurveySolutionsAPI::suso_mapupload(workspace = input$susoWS, path_to_zip = fp)
-        upcheck<-suso_mapupload2(workspace = input$susoWS, path_to_zip = fp)
-
-        if(nrow(upcheck)>0) {
+        upcheck<-.runWithModalOnError(suso_mapupload2(workspace = input$susoWS, path_to_zip = fp))
+        # reload maps table
+        if(!is.null(upcheck) && nrow(upcheck)>0) {
           tab<-SurveySolutionsAPI::suso_mapinfo(workspace = input$susoWS)
+          tab<-.loopForMapsApi(tab, workspace = input$susoWS)
           maptablequery(tab)
         }
-
+        waiter::waiter_hide()
       }, ignoreInit = T)
 
       # API queries
       maptablequery<-reactiveVal(NULL)
       observeEvent(apiCheck(), {
         shiny::validate(need(apiCheck()==200, message = F))
-        tab<-SurveySolutionsAPI::suso_mapinfo(workspace = input$susoWS)
+        waiter::waiter_show(
+          color = "rgba(13, 71, 161, 0.7)",
+          html = tagList(
+            waiter::spin_fading_circles(),
+            "Checking Credentials & Loading Data ..."
+          )
+        )
+        tab<-.runWithModalOnError(func = SurveySolutionsAPI::suso_mapinfo(workspace = input$susoWS))
+        # more than 100 maps loaded
+        tab<-.loopForMapsApi(tab, workspace = input$susoWS)
         maptablequery(tab)
+
+        waiter::waiter_hide()
       })
       # query teams
       teamtablequery<-reactive({
