@@ -76,7 +76,7 @@ Furthermore the application is part of a larger set of tools to support the use 
     - ESRI World Imagery (no key) 
     - Open Street Maps (no key) 
     - [Mapbox (with key)](https://www.mapbox.com/)
-    - [ESRI map server (with key)]((https://developers.arcgis.com/documentation/mapping-apis-and-services/data-hosting/services/image-tile-service/))).
+    - [ESRI map server (with key)](https://developers.arcgis.com/documentation/mapping-apis-and-services/data-hosting/services/image-tile-service/).
 - **Selection of Storage Mode**: 
     - [PostGIS-PostgreSQL](https://postgis.net/) (requires server installation)
     - local storage.

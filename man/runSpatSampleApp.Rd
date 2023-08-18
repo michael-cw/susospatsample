@@ -26,7 +26,8 @@ function to call with the application's URL.}
 
 \item{google_ai_score_map_url}{Url for base map to google AI, unlikely to change!}
 
-\item{bufferForSuSoBounds}{Buffere for Survey Solutions geo-fencing}
+\item{bufferForSuSoBounds}{Buffer for Survey Solutions
+\href{https://docs.mysurvey.solutions/syntax-guide/questions/syntax-guide-gps-questions/}{Geofencing}}
 
 \item{pointsLimit}{Limit for points data to be aggregated to area}
 }

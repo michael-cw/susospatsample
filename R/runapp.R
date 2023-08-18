@@ -14,7 +14,8 @@
 #' @param mapwidget.option Selection of map at start-up, mapdeck or leaflet, defaults to leaflet if NULL
 #' @param google_ai_score_map_url Url for base map to google AI, unlikely to change!
 #' @param google_ai_score_url URL for google AI scores, unlikely to change!
-#' @param bufferForSuSoBounds Buffere for Survey Solutions geo-fencing
+#' @param bufferForSuSoBounds Buffer for Survey Solutions
+#' [Geofencing](https://docs.mysurvey.solutions/syntax-guide/questions/syntax-guide-gps-questions/)
 #' @param pointsLimit Limit for points data to be aggregated to area
 #'
 #'
@@ -43,7 +44,7 @@ runSpatSampleApp <- function(launch.browser = T,
   )
 
   # option check
-  mapwidget.option<-match.arg(mapwidget.option)
+  mapwidget.option <- match.arg(mapwidget.option)
 
 
   # get original options
@@ -68,7 +69,7 @@ runSpatSampleApp <- function(launch.browser = T,
       bufferForSuSoBounds = bufferForSuSoBounds,
       pointsLimit = pointsLimit
     )
-    shiny::shinyOptions(shiny.maxRequestSize=500000*1024^2)
+    shiny::shinyOptions(shiny.maxRequestSize = 500000 * 1024^2)
 
     # revert to original state at the end
     shiny::onStop(function() {
@@ -78,6 +79,6 @@ runSpatSampleApp <- function(launch.browser = T,
     })
   }
   # create app & run
-  appObj<-shiny::shinyApp(ui = main_ui, server = main_server, onStart = changeoptions)
+  appObj <- shiny::shinyApp(ui = main_ui, server = main_server, onStart = changeoptions)
   shiny::runApp(appObj, launch.browser = launch.browser, quiet = T)
 }

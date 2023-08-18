@@ -13,7 +13,8 @@
 #' @param mapwidget.option Selection of map at start-up, mapdeck or leaflet, defaults to leaflet if NULL
 #' @param google_ai_score_map_url Url for base map to google AI, unlikely to change!
 #' @param google_ai_score_url URL for google AI scores, unlikely to change!
-#' @param bufferForSuSoBounds Buffere for Survey Solutions geo-fencing
+#' @param bufferForSuSoBounds Buffer for Survey Solutions
+#' [Geofencing](https://docs.mysurvey.solutions/syntax-guide/questions/syntax-guide-gps-questions/)
 #' @param pointsLimit Limit for points data to be aggregated to area
 #'
 #'
@@ -25,7 +26,6 @@ runSpatSampleAppServer <- function(
     google_ai_score_map_url = "https://sites.research.google/open-buildings/tiles.geojson",
     bufferForSuSoBounds = 5,
     pointsLimit = 100000) {
-
   shiny::addResourcePath("www", system.file("www", package = "susospatsample"))
   shiny::addResourcePath("ui_inputs", system.file("ui_inputs", package = "susospatsample"))
   shiny::addResourcePath("rmdfiles", system.file("rmdfiles", package = "susospatsample"))
@@ -42,7 +42,7 @@ runSpatSampleAppServer <- function(
   )
 
   # option check
-  mapwidget.option<-match.arg(mapwidget.option)
+  mapwidget.option <- match.arg(mapwidget.option)
 
   # get original options
   original_options <- list(
@@ -66,7 +66,7 @@ runSpatSampleAppServer <- function(
       bufferForSuSoBounds = bufferForSuSoBounds,
       pointsLimit = pointsLimit
     )
-    shiny::shinyOptions(shiny.maxRequestSize=500000*1024^2)
+    shiny::shinyOptions(shiny.maxRequestSize = 500000 * 1024^2)
 
     # revert to original state at the end
     shiny::onStop(function() {

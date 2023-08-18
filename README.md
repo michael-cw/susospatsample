@@ -97,7 +97,7 @@ Other currently available applications are:
   - Open Street Maps (no key)
   - [Mapbox (with key)](https://www.mapbox.com/)
   - [ESRI map server (with
-    key)]((https://developers.arcgis.com/documentation/mapping-apis-and-services/data-hosting/services/image-tile-service/))).
+    key)](https://developers.arcgis.com/documentation/mapping-apis-and-services/data-hosting/services/image-tile-service/).
 - **Selection of Storage Mode**:
   - [PostGIS-PostgreSQL](https://postgis.net/) (requires server
     installation)
