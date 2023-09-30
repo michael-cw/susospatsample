@@ -17,7 +17,8 @@
 #' @param bufferForSuSoBounds Buffer for Survey Solutions
 #' [Geofencing](https://docs.mysurvey.solutions/syntax-guide/questions/syntax-guide-gps-questions/)
 #' @param pointsLimit Limit for points data to be aggregated to area
-#'
+#' @param systemCheck Check system working memory and adjust application parameters. If you want to override this check, set it to
+#' FALSE.
 #'
 #' @export
 
@@ -26,7 +27,20 @@ runSpatSampleApp <- function(launch.browser = T,
                              google_ai_score_url = "https://storage.googleapis.com/open-buildings-data/v1/score_thresholds_s2_level_4.csv",
                              google_ai_score_map_url = "https://sites.research.google/open-buildings/tiles.geojson",
                              bufferForSuSoBounds = 5,
-                             pointsLimit = 100000) {
+                             pointsLimit = 100000,
+                             systemCheck = TRUE) {
+  # system Check
+  if(systemCheck) {
+    cat("Checking Working Memory\n\n")
+    osmem<-get_total_physical_memory()
+    if(is.na(osmem)) {
+      cat("Could not read Memory, will set it to 16 GB\n\n")
+      osmem<-32
+    }
+    cat("Total Physical Memory:", osmem, "GB\n\n")
+  } else {
+    osmem<-32
+  }
   # add resource pathes
   shiny::addResourcePath("www", system.file("www", package = "susospatsample"))
   shiny::addResourcePath("ui_inputs", system.file("ui_inputs", package = "susospatsample"))
@@ -62,6 +76,7 @@ runSpatSampleApp <- function(launch.browser = T,
   changeoptions <- function() {
     options(
       # Temporary change of environment options
+      shiny.maxRequestSize = osmem * 1024^3,
       spinner.color.background = "#0d47a1",
       mapwidget.option = mapwidget.option,
       google_ai_score_url = google_ai_score_url,
@@ -69,7 +84,7 @@ runSpatSampleApp <- function(launch.browser = T,
       bufferForSuSoBounds = bufferForSuSoBounds,
       pointsLimit = pointsLimit
     )
-    shiny::shinyOptions(shiny.maxRequestSize = 500000 * 1024^2)
+    # shiny::shinyOptions(shiny.maxRequestSize = 500000 * 1024^2)
 
     # revert to original state at the end
     shiny::onStop(function() {

@@ -1,4 +1,3 @@
-
 # Module UI
 startupModalUI <- function(id) {
   ns <- NS(id)
@@ -22,9 +21,9 @@ startupModalSRV <- function(id,
     user <- reactiveVal(NULL)
 
     # conditional, if user or user & api key is required
-    modalfields<-function(id, uo = useronly) {
+    modalfields <- function(id, uo = useronly) {
       ns <- NS(id)
-      if(!uo) {
+      if (!uo) {
         tagList(
           shiny::passwordInput(
             inputId = ns("mapkey"),
@@ -37,7 +36,7 @@ startupModalSRV <- function(id,
             placeholder = "User Name"
           )
         )
-      } else if(uo) {
+      } else if (uo) {
         tagList(
           shiny::textInput(
             inputId = ns("user"),
@@ -67,45 +66,48 @@ startupModalSRV <- function(id,
         confirmButtonCol = "#AEDEF4",
         timer = 0,
         imageUrl = "",
-        animation = TRUE)
+        animation = TRUE
+      )
     })
 
     observeEvent(input$startup, {
       if (!useronly && input$mapkey == "") {
         shinyalert::shinyalert(paste(apikeyhead),
-                               apikeymessage,
-                               closeOnEsc = TRUE,
-                               closeOnClickOutside = TRUE,
-                               html = FALSE,
-                               type = "error",
-                               showConfirmButton = TRUE,
-                               showCancelButton = FALSE,
-                               confirmButtonText = "OK",
-                               confirmButtonCol = "#AEDEF4",
-                               timer = 0,
-                               imageUrl = "",
-                               animation = TRUE)
+          apikeymessage,
+          closeOnEsc = TRUE,
+          closeOnClickOutside = TRUE,
+          html = FALSE,
+          type = "error",
+          showConfirmButton = TRUE,
+          showCancelButton = FALSE,
+          confirmButtonText = "OK",
+          confirmButtonCol = "#AEDEF4",
+          timer = 0,
+          imageUrl = "",
+          animation = TRUE
+        )
         req(FALSE)
       } else if (input$user == "") {
         shinyalert::shinyalert(paste("User name missing!"),
-                               "You have not provided a user name. Since this is required
+          "You have not provided a user name. Since this is required
                                to store the files in your personal directory,
                                please refresh the page and provide a user name.",
-                               closeOnEsc = TRUE,
-                               closeOnClickOutside = TRUE,
-                               html = FALSE,
-                               type = "error",
-                               showConfirmButton = TRUE,
-                               showCancelButton = FALSE,
-                               confirmButtonText = "OK",
-                               confirmButtonCol = "#AEDEF4",
-                               timer = 0,
-                               imageUrl = "",
-                               animation = TRUE)
+          closeOnEsc = TRUE,
+          closeOnClickOutside = TRUE,
+          html = FALSE,
+          type = "error",
+          showConfirmButton = TRUE,
+          showCancelButton = FALSE,
+          confirmButtonText = "OK",
+          confirmButtonCol = "#AEDEF4",
+          timer = 0,
+          imageUrl = "",
+          animation = TRUE
+        )
         req(FALSE)
       } else {
         # mapkey if selected
-        if(!useronly) mapkey(input$mapkey)
+        if (!useronly) mapkey(input$mapkey)
         # user
         usr <- sanitize_string(input$user)
         user(usr)

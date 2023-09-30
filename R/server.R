@@ -3144,6 +3144,7 @@ main_server <- function(input, output, session) {
   samp_raster_shp <- reactive({
     DF <- sample_square$samp_raster_shp
     shiny::validate(need(DF, message = F))
+    CHECKDF<<-DF
     DF <- DF %>% st_transform(4326)
     if (isolate(input$popCreate) == "Yes") DF$Pop <- round(DF$Pop)
     if (input$sampType == "Random Cluster" & input$popCreate == "No" & input$strat == "Yes") {

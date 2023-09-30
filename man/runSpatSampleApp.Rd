@@ -11,7 +11,8 @@ runSpatSampleApp(
     "https://storage.googleapis.com/open-buildings-data/v1/score_thresholds_s2_level_4.csv",
   google_ai_score_map_url = "https://sites.research.google/open-buildings/tiles.geojson",
   bufferForSuSoBounds = 5,
-  pointsLimit = 1e+05
+  pointsLimit = 1e+05,
+  systemCheck = TRUE
 )
 }
 \arguments{
@@ -30,6 +31,9 @@ function to call with the application's URL.}
 \href{https://docs.mysurvey.solutions/syntax-guide/questions/syntax-guide-gps-questions/}{Geofencing}}
 
 \item{pointsLimit}{Limit for points data to be aggregated to area}
+
+\item{systemCheck}{Check system working memory and adjust application parameters. If you want to override this check, set it to
+FALSE.}
 }
 \description{
 A wrappter function to start the application. Please make sure you have read the

@@ -293,7 +293,7 @@ split_poly <- function(sf_poly, n_areas, seed = floor(runif(1, 1000,9999))){
     {kmeans(points, centers = n_areas)},
     error = function(e) return(NULL))
   # exit on error and return input shape
-  if(!is.null(k_means)) {
+  if(is.null(k_means)) {
     return(sf_poly)
   }
   # create voronoi polygons
