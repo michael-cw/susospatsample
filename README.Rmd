@@ -169,6 +169,6 @@ Please continue to check for updates, as we are constantly working to improve th
 
 [^2]: Due to capacity limitations of the leaflet package some large data visualizations are only available when using mapdeck mode. Please be aware, that currently there may be an issue with mapdeck when using the lates R version on Windows systems, see [here](https://github.com/SymbolixAU/mapdeck/issues/359).
 
-[^3]: Subject to system resources.
+[^3]: Subject to system resources. For interactive use, a system check can be performed.
 
 </div>

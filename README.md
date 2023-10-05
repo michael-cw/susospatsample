@@ -214,4 +214,5 @@ improve the application.
     the lates R version on Windows systems, see
     [here](https://github.com/SymbolixAU/mapdeck/issues/359).
 
-[^3]: Subject to system resources.
+[^3]: Subject to system resources. For interactive use, a system check
+    can be performed.
