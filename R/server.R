@@ -84,6 +84,7 @@ main_server <- function(input, output, session) {
     # appdir
     appdir <- file.path(appdir, paste0(usr))
     fp(appdir)
+    print(fp())
     # tif maps
     tifdir <- file.path(appdir, "basemaps_tif")
     if (!dir.exists(tifdir)) {
@@ -574,10 +575,15 @@ main_server <- function(input, output, session) {
 
         ## i. LOAD MAP
         ## Level 1 (standard)
-        tmp.shp <- try(GADM.getData("GADM", country = iso3_sel, level = 1, path = file.path(fp(), "GADMmaps"), sp.Library = "sf"), silent = T)
+        tmp.shp <- try(GADM.getData("GADM", country = iso3_sel, level = 1, 
+                                    path = file.path(fp(), "GADMmaps"), 
+                                    sp.Library = "sf"), silent = T)
         incProgress(0.2)
         ##  Check Level 0 if one fails
-        if (class(tmp.shp)[1] == "try-error") try(GADM.getData("GADM", country = iso3_sel, level = 0, path = "data/GADMmaps", sp.Library = "sf"), silent = T)
+        if (class(tmp.shp)[1] == "try-error") tmp.shp<-try(GADM.getData("GADM", country = iso3_sel, 
+                                                               level = 0, 
+                                                               path = file.path(fp(), "GADMmaps"), 
+                                                               sp.Library = "sf"), silent = T)
         ##  Stop if not found
         shiny::validate(need(class(tmp.shp)[1] != "try-error", message = "No GADM files available for this country!"))
         new_shp$shp.source <- "GADM"

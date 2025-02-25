@@ -17,7 +17,7 @@ mapadminUI <- function(id) {
     shinyWidgets::useShinydashboard(),
     shinyjs::useShinyjs(),
     ## shiny alert conditional on version
-    if (utils::packageVersion("shinyalert") < 3) shinyalert::useShinyalert(),
+    if (utils::packageVersion("shinyalert") < '3.0.0') shinyalert::useShinyalert(),
     waiter::use_waiter(),
     fluidRow(
       shinydashboard::box(

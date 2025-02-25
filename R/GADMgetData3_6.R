@@ -6,6 +6,7 @@
 
 # https://biogeo.ucdavis.edu/data/gadm3.6/Rsp/gadm36_AUT_0_sp.rds
 # https://biogeo.ucdavis.edu/data/gadm3.6/Rsp/gadm36_AUT_1_sp.rds
+# https://geodata.ucdavis.edu/gadm/gadm3.6/Rsf/gadm36_AND_0_sf.rds
 
 GADM.getData <- function(name = "GADM", country, level, path, sp.Library = "sp") {
   version <- "3.6"
@@ -18,7 +19,7 @@ GADM.getData <- function(name = "GADM", country, level, path, sp.Library = "sp")
   ##  1. Create path
   file.name <- paste0("gadm", v, "_", country, "_", level, "_", sp.Library, ".rds")
   f.path <- file.path(path, file.name)
-  url <- paste0("https://biogeo.ucdavis.edu/data/gadm", version, DIR, file.name)
+    url <- paste0("https://geodata.ucdavis.edu/gadm/gadm", version, DIR, file.name)
 
   ##  2. check local availability
   if (file.exists(f.path)) {

@@ -13,7 +13,7 @@ main_ui <- function(request) {
     ##    Title BAR (logo, bg color font color etc)
     useShinyjs(),
     ## shiny alert conditional on version
-    if (utils::packageVersion("shinyalert") < 3) shinyalert::useShinyalert(),
+    if (utils::packageVersion("shinyalert") < '3.0.0') shinyalert::useShinyalert(),
     startupModalUI("startupModal"),
     fluidRow(
       column(2, div(
