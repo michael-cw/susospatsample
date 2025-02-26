@@ -78,6 +78,7 @@ Imports:
     waiter,
     withr,
     zip
+Remotes: michael-cw/SurveySolutionsAPI@dev1
 Encoding: UTF-8
 Language: en
 LazyData: true
