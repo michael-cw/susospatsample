@@ -39,10 +39,11 @@ shpMapOSM<-function(shp = NULL, z_var = NULL) {
     #   osmdata_sf()
     ###########################################
     names(bb)<-c("left", "bottom", "right", "top")
-    osmmap<-tryCatch(
-      {get_map(bb, source = "osm", maptype = "roadmap", scale = 9)},
-      error = function(e) {get_map(bb, source = "stamen", maptype = "terrain")})
-    shapePlot_baseMap<-ggmap(osmmap)+
+    # osmmap<-tryCatch(
+    #   {get_map(bb, source = "osm", maptype = "roadmap", scale = 9)},
+    #   error = function(e) {get_map(bb, source = "stamen", maptype = "terrain")})
+    # osmmap seems not to work
+    shapePlot_baseMap<-ggplot()+
       geom_sf(data = shp, aes(fill = .data[[z_var]], color = .data[[z_var]]), inherit.aes = FALSE, alpha = 0.3)+
       scale_fill_discrete(name = z_var) +
       scale_color_discrete(guide = "none") +
