@@ -6,7 +6,6 @@
 
 
 
-
 ## Server Function
 main_server <- function(input, output, session) {
   #########################################
@@ -429,7 +428,6 @@ main_server <- function(input, output, session) {
         for (i in 1:nshp) {
           tmp.shplist[[i]] <- sf::st_read(file.path(shpFiles, shpFile[i]), quiet = TRUE)
         }
-        # CHECKtmp.shplist<<-tmp.shplist
         tmp.shp <- do.call(rbind, tmp.shplist)
 
         tmp.shp <- list(st_crs(tmp.shp)[[2]], tmp.shp)
@@ -717,7 +715,6 @@ main_server <- function(input, output, session) {
         ##########################################################
 
         incProgress(0.4)
-        # checkboundaries<<-tmp.shp.sf
         ## Simplify for very complex maps
         if (npts(tmp.shp.sf) / nrow(tmp.shp.sf) > 100) {
           crsOld <- st_crs(tmp.shp.sf)
@@ -1048,7 +1045,6 @@ main_server <- function(input, output, session) {
   observe({
     tmp <- popFilePoint()
     shiny::validate(need(tmp, message = F))
-    # CHECKtmpFile<<-tmp
     if (input$sampType == "Random Grid") {
       v <- names(tmp %>% st_set_geometry(NULL))
       v <- setNames(object = v, v)
@@ -1992,70 +1988,76 @@ main_server <- function(input, output, session) {
                 sp_grd_strat_poly <- harare_landuse3_type1 %>%
                   select(.data[[input$`strVarSel-strat_var`]], stratum_numeric)
               }
-
+              
               ## CRS Transformation:
-              ## 1. For cropping use raster, but transform back then project area to utm
+              ## 0. Raster transform to terra!!
+              pop_raster <- terra::rast(pop_raster)
+              ## 1. For cropping use terra, but transform back then project area to utm
               crsOld <- st_crs(sp_grd_strat_poly)
-              sp_grd_strat_poly <- st_transform(sp_grd_strat_poly, (raster::proj4string(pop_raster)))
-              pop_raster <- raster::crop(pop_raster, raster::extent(sp_grd_strat_poly))
+              sp_grd_strat_poly <- st_transform(sp_grd_strat_poly, terra::crs(pop_raster))
+              pop_raster <- terra::crop(pop_raster, terra::ext(sp_grd_strat_poly))
               sp_grd_strat_poly <- st_transform(sp_grd_strat_poly, crsOld)
-
+              
               ## 2. reproject raster to metered UTM (zone is based on location)--> required for GRIDID
               sp_grd_strat_poly <- project_to_utm(sp_grd_strat_poly)
-              pop_raster <- projectRaster(pop_raster, crs = st_crs(sp_grd_strat_poly)[1]$input)
-
-
-
+              pop_raster <- terra::project(pop_raster, terra::crs(sp_grd_strat_poly))
+              
               #######################################
-              ## 3. MC for extraction ## MC MC MC not #future!!
-              # future::plan(sequential) ## turn off #future?
-              ## 3.1 parallel setup
+              ## 3. Future setup for parallel processing
               cores <- data.table::getDTthreads()
-              cl <- parallel::makeCluster(cores)
-              doParallel::registerDoParallel(cl)
-
+              future::plan(future::multisession, workers = cores)
+              doFuture::registerDoFuture()
+              
               ##  2. N simu and packages
               simu <- nrow(sp_grd_strat_poly)
               pack_dp_sp <- c(
-                "raster", "sp", "rgdal", "broom",
-                "data.table", "plyr", "dplyr", "shiny", "sf", "fasterize", "spex"
+                "terra", "sf", "data.table", "plyr", "dplyr", "shiny", "fasterize"
               )
-
+              
               incProgress(0.3)
+              #pop_raster_wrapped <- terra::wrap(pop_raster, proxy = T)
+              # write to tmp file and read in again in loop
+              tmp.tif<-tempfile(fileext = ".tif")
+              terra::writeRaster(pop_raster, tmp.tif, overwrite = T)
               final <- foreach(
-                i = 1:simu, .packages = pack_dp_sp,
-                # .combine=list,
+                i = 1:simu, 
                 .multicombine = F,
-                # .export = c("a"),
-                # .verbose = T,
-                .errorhandling = "pass"
+                .errorhandling = "pass",
+                .options.future = list(packages = pack_dp_sp)
               ) %dopar% {
                 tmp.poly <- sp_grd_strat_poly[i, ]
                 if (st_is_empty(tmp.poly)) {
                   return(NULL)
                 } else {
-                  tmp.ras <- crop(pop_raster, extent(tmp.poly))
-                  # if(is.null(tmp.ras)) next()
+                  #pop_raster_worker <- terra::unwrap(pop_raster_wrapped)
+                  pop_raster_worker <- terra::rast(tmp.tif)
+                  tmp.ras <- terra::crop(pop_raster_worker, tmp.poly)
+                  #tmp.poly.ras <- terra::rast(fasterize(tmp.poly, tmp.ras, fun = "max"))
+                  tmp.poly.ras<-terra::rasterize(vect(tmp.poly), terra::rast(tmp.ras), fun = "max")
+                  tmp.poly.ras <- tmp.poly.ras * tmp.ras
+                  ras_points <- data.table::data.table(terra::values(tmp.poly.ras))
+                  xres <- terra::xres(tmp.poly.ras)
+                  yres <- terra::yres(tmp.poly.ras)
 
-                  tmp.poly.ras <- fasterize(tmp.poly, tmp.ras, fun = "max")
-                  tmp.poly.ras[] <- tmp.poly.ras[] * tmp.ras[]
-                  ras_points <- data.table(getValues((tmp.poly.ras)))
-                  xres <- raster::xres(tmp.poly.ras)
-                  yres <- raster::yres(tmp.poly.ras)
-                  ras_points[, CID := 1:.N][, X := floor(xFromCell(tmp.poly.ras, 1:nrow(ras_points)) / xres)]
-                  ras_points[, Y := floor(yFromCell(tmp.poly.ras, 1:nrow(ras_points)) / yres)]
+                  # Get coordinates using terra functions
+                  coords <- terra::xyFromCell(tmp.poly.ras, 1:terra::ncell(tmp.poly.ras))
+                  ras_points[, CID := 1:.N]
+                  ras_points[, X := floor(coords[, 1] / xres)]
+                  ras_points[, Y := floor(coords[, 2] / yres)]
                   ras_points[, GRIDID := sprintf("Lat%dLon%d", Y, X)]
                   ras_points[, X := NULL][, Y := NULL]
-                  ras_points <- copy(ras_points[!is.na(V1)])
+                  ras_points <- copy(ras_points[!is.na(layer)])
                   ras_points[, stratum_numeric := tmp.poly$stratum_numeric]
-                  ras_points[, TOTPOP := ceiling(sum(V1))]
+                  ras_points[, TOTPOP := ceiling(sum(layer))]
+                  data.table::setnames(ras_points, "layer", "V1")
                   return(ras_points)
                 }
               }
-              parallel::stopCluster(cl)
-
+              
+              # Clean up future plan
+              future::plan(future::sequential)
               incProgress(0.6)
-
+              
               ########################
               ##  TO sampling, complete DATA table
               if (is.data.table(final)) {
@@ -2068,12 +2070,12 @@ main_server <- function(input, output, session) {
                 group_by(stratum_numeric) %>%
                 summarise(Pop = ceiling(sum(V1)), Cells = n_distinct(CID))
               new_pop$popSizeStrat <- popSizeStrat
-
+              
               popSizeStrat$stratum_numeric <- NULL
               sp_grd_strat_poly <- dplyr::bind_cols(sp_grd_strat_poly, popSizeStrat)
               setnames(ras_points, "V1", "Pop")
               rm(final)
-
+              
               # ########################
               # ##  TO sampling, complete DATA table
               # sp_grd_strat_poly$Pop<-Pop
@@ -2144,14 +2146,15 @@ main_server <- function(input, output, session) {
                 # future::plan(sequential) ## turn off #future?
                 ## 3.1 parallel setup
                 cores <- data.table::getDTthreads()
-                cl <- parallel::makeCluster(cores)
-                doParallel::registerDoParallel(cl)
+                future::plan(future::multisession, workers = cores)
+                doFuture::registerDoFuture()
 
                 ## 2.1. Continous Data
                 if (input$catRaster == "No") {
                   incProgress(0.3, message = "Aggregation in Progress.")
                   Pop <- foreach(
-                    i = 1:simu, .packages = pack_dp_sp,
+                    i = 1:simu,
+                    .options.future = list(packages = pack_dp_sp),
                     .combine = c,
                     .verbose = F,
                     .errorhandling = "stop"
@@ -2174,7 +2177,8 @@ main_server <- function(input, output, session) {
                   incProgress(0.3, message = "Aggregation in Progress.")
                   loop.time <- system.time(
                     Pop <- foreach(
-                      i = 1:simu, .packages = pack_dp_sp,
+                      i = 1:simu,
+                      .options.future = list(packages = pack_dp_sp),
                       .combine = c,
                       .multicombine = T,
                       # .export = c("a"),
@@ -2190,7 +2194,9 @@ main_server <- function(input, output, session) {
                     }
                   )
                 }
+                future::plan(future::sequential)
                 incProgress(0.6)
+                
                 ########################
                 ##  TO sampling, complete DATA table
                 sp_grd_strat_poly$Pop <- Pop
@@ -2236,15 +2242,16 @@ main_server <- function(input, output, session) {
                 # future::plan(sequential) ## turn off #future?
                 ## 3.1 parallel setup
                 cores <- data.table::getDTthreads()
-                cl <- parallel::makeCluster(cores)
-                doParallel::registerDoParallel(cl)
+                future::plan(future::multisession, workers = cores)
+                doFuture::registerDoFuture()
 
                 ## 3.2. Continous Data
                 if (input$catRaster == "No") {
                   ## parallel loop
                   incProgress(0.15, message = "Aggregation in Progress.")
                   Pop <- foreach(
-                    i = 1:simu, .packages = pack_dp_sp,
+                    i = 1:simu, 
+                    .options.future = list(packages = pack_dp_sp),
                     .combine = "c",
                     .verbose = F,
                     .errorhandling = "pass"
@@ -2274,7 +2281,7 @@ main_server <- function(input, output, session) {
                     }
                     return(pop)
                   }
-                  parallel::stopCluster(cl)
+                  
                 } else {
                   ## 2.2. Categorical Data
                   # registerDoFuture()
@@ -2282,7 +2289,8 @@ main_server <- function(input, output, session) {
                   incProgress(0.15, message = "Aggregation in Progress.")
                   loop.time <- system.time(
                     Pop <- foreach(
-                      i = 1:simu, .packages = pack_dp_sp,
+                      i = 1:simu,
+                      .options.future = list(packages = pack_dp_sp),
                       .combine = "c",
                       .verbose = F,
                       .errorhandling = "pass"
@@ -2297,6 +2305,9 @@ main_server <- function(input, output, session) {
                   )
                 }
                 incProgress(0.6, message = "Almost done.")
+                # Clean up future plan
+                future::plan(future::sequential)
+                #CHECKPOP1<<- Pop
                 ########################
                 ##  TO sampling, complete DATA table
                 sp_grd_strat_poly$Pop <- Pop
@@ -2351,8 +2362,8 @@ main_server <- function(input, output, session) {
                 resRas <- res(pop_raster)
                 resRas <- round(resRas, 2)
               }
-              p4s <- raster::proj4string(pop_raster)
-              bbRas <- round(bbox(pop_raster), 6)
+              p4s <- terra::crs(pop_raster)
+              bbRas <- as.vector(round(terra::ext(pop_raster), 6))
               popSize <- sum(pop_raster[], na.rm = T)
             }
             pop.info <- list()
@@ -2699,21 +2710,23 @@ main_server <- function(input, output, session) {
         # pop_raster<-crop(pop_raster, extent(sp_grd_strat_poly))
 
         ##  MULITCORE LOOP
-        # registerDoFuture()
-        # plan(multicore)
+        cores <- data.table::getDTthreads()
+        future::plan(future::multisession, workers = cores)
+        doFuture::registerDoFuture()
 
         ##  2. N simu and packages
         simu <- nrow(sp_grd_strat_poly)
         # pack_dp_sp<-c("sp", paste0(package_dependencies("sp")[[1]]))
         pack_dp_sp <- c(
-          "raster", "sp", "rgdal", "broom",
+          "raster", "sp", "broom", 
           "data.table", "plyr", "dplyr", "shiny", "sf", "fasterize", "spex"
         )
 
         incProgress(0.3)
 
         Pop <- foreach(
-          i = 1:simu, .packages = pack_dp_sp,
+          i = 1:simu,
+          .options.future = list(packages = pack_dp_sp),
           .combine = c,
           .multicombine = T,
           # .export = c("a"),
@@ -2729,7 +2742,8 @@ main_server <- function(input, output, session) {
           return(pop)
         }
         Pop <- ifelse(Pop == 0 | is.na(Pop), min(Pop[Pop > 0]), Pop)
-
+        
+        future::plan(future::sequential)
         incProgress(0.6)
         ########################
         ##  TO sampling, complete DATA table
@@ -3022,23 +3036,28 @@ main_server <- function(input, output, session) {
           ## 3. MC for extraction ## MC MC MC not #future!!
           # future::plan(sequential) ## turn off #future?
           ## 3.1 parallel setup
+          #######################################
+          ## 3. Future setup for parallel processing
           cores <- data.table::getDTthreads()
-          cl <- parallel::makeCluster(cores)
-          doParallel::registerDoParallel(cl)
+          future::plan(future::multisession, workers = cores)
+          doFuture::registerDoFuture()
           ##  2. N simu and packages
           simu <- nrow(sp_grd_strat)
           stratNum <- unique(sampDF$stratum_numeric)
-          # pack_dp_sp<-c("sp", paste0(package_dependencies("sp")[[1]]))
-          # deps<-unique(c(paste0(package_dependencies("sf")[[1]]),
-          #                paste0(package_dependencies("raster")[[1]]),
-          #                paste0(package_dependencies("spex")[[1]])),
-          #              paste0(package_dependencies("data.table")[[1]]))
-          pack_and_deps <- unique(c("sf", "fasterize", "spex", "data.table", "raster", "sp"))
-
+          
+          # write to tmp file and read in again in loop
+          ## First remove all files
+          tmp <- list.files(tempdir(), pattern = "\\.tif$", full.names = TRUE)
+          if (length(tmp) > 0) {
+            file.remove(tmp)
+          }
+          tmp.tif<-tempfile(fileext = ".tif")
+          terra::writeRaster(pop_raster, tmp.tif, overwrite = T)
+          pack_dp_sp <- unique(c("sf", "fasterize", "spex", "data.table", "terra"))
           incProgress(0.3)
           final <- foreach(
             i = 1:simu,
-            .packages = pack_and_deps,
+            .options.future = list(packages = pack_dp_sp),
             # .export = c("sp_grd_strat", "sampDF", "pop_raster"),
             # .combine=list,
             .multicombine = F,
@@ -3048,20 +3067,28 @@ main_server <- function(input, output, session) {
             if (st_is_empty(tmp.poly)) {
               return(NULL)
             } else {
-              tmp.poly <- as(tmp.poly, "Spatial")
-
               ## i. subset sample to stratum
-              tmp.samp <- sampDF[stratum_numeric %in% tmp.poly$stratum_numeric]
-              ## ii. crop raster
-              tmp.ras <- raster::crop(pop_raster, extent(tmp.poly))
-              tmp.samp.ras <- raster(nrows = nrow(tmp.ras), ncols = ncol(tmp.ras), crs = crs(tmp.ras))
-              extent(tmp.samp.ras) <- extent(tmp.ras)
-              tmp.samp.ras[] <- NA
-              tmp.samp.ras[tmp.samp$CID] <- tmp.ras[tmp.samp$CID]
-              return(tmp.samp.ras)
+              tmp.samp <- sampDF[sampDF$stratum_numeric %in% tmp.poly$stratum_numeric,]
+              ## ii. crop raster using terra
+              pop_raster_worker <- terra::rast(tmp.tif)
+              tmp.ras <- terra::crop(pop_raster_worker, tmp.poly)
+
+              # Create empty raster with same dimensions and properties
+              tmp.samp.ras <- terra::rast(nrows = nrow(tmp.ras), ncols = ncol(tmp.ras), 
+                                          crs = terra::crs(tmp.ras), extent = terra::ext(tmp.ras))
+              
+              # Initialize with NA values
+              terra::values(tmp.samp.ras) <- NA
+              
+              # Assign values from original raster using cell IDs
+              terra::values(tmp.samp.ras)[tmp.samp$CID] <- terra::values(tmp.ras)[tmp.samp$CID]
+              
+              return(terra::wrap(tmp.samp.ras))
             }
           }
-          parallel::stopCluster(cl)
+          future::plan(future::sequential)
+          # unwrap at end of loop
+          final<-lapply(final, terra::unwrap)
 
           if (class(final)[1] == "list" & length(final) > 1) {
             final1 <- list()
@@ -3069,31 +3096,36 @@ main_server <- function(input, output, session) {
             for (i in 1:length(final)) {
               tmp.samp.ras <- final[[i]]
               ## CHECK for small raster
-              if (ncell(tmp.samp.ras) == 0) next()
-              if (sum(!is.na(tmp.samp.ras[])) < 4) {
-                tmp.samp.ras.poly <- rasterToPolygons(tmp.samp.ras)
+              if (terra::ncell(tmp.samp.ras) == 0) next()
+              if (sum(!is.na(terra::values(tmp.samp.ras))) < 4) {
+                # Convert raster to polygons using terra
+                tmp.samp.ras.poly <- terra::as.polygons(tmp.samp.ras, aggregate = F, na.rm = F)
                 ## Next if NO SAMPLE
                 if (is.null(tmp.samp.ras.poly)) next()
+                # Convert to sf object
                 tmp.samp.ras.poly <- st_as_sf(tmp.samp.ras.poly)
-                tmp.samp.ras.poly$CID <- rownames(tmp.samp.ras.poly)
+                # Add row names as CID (terra polygons don't have rownames, so we'll create them)
+                tmp.samp.ras.poly$CID <- as.character(1:nrow(tmp.samp.ras.poly))
                 ## ADD other Frame data
                 tmpStrat <- stratNum[i]
                 tmp.samp <- sampDF[stratum_numeric == tmpStrat]
                 tmp.samp.ras.poly <- merge(tmp.samp.ras.poly,
-                  tmp.samp[, .(CID, Pop, GRIDID, TOTPOP, stratum_numeric, Stratum, n_samp, n_elig)],
-                  by = c("CID")
+                                           tmp.samp[, .(CID, Pop, GRIDID, TOTPOP, stratum_numeric, Stratum, n_samp, n_elig)],
+                                           by = c("CID")
                 )
               } else {
-                tmp.samp.ras.poly <- qm_rasterToPolygons(tmp.samp.ras, na.rm = T)
-                tmp.samp.ras.poly$CID <- rownames(tmp.samp.ras.poly)
-                #### check warning with old style crs!!
-
+                # Use terra equivalent for qm_rasterToPolygons
+                tmp.samp.ras.poly <- terra::as.polygons(tmp.samp.ras, na.rm = F, aggregate = F)
+                # Convert to sf object
+                tmp.samp.ras.poly <- st_as_sf(tmp.samp.ras.poly)
+                # Add row names as CID
+                tmp.samp.ras.poly$CID <- as.character(1:nrow(tmp.samp.ras.poly))
                 ## ADD other Frame data
                 tmpStrat <- stratNum[i]
                 tmp.samp <- sampDF[stratum_numeric == tmpStrat]
                 tmp.samp.ras.poly <- merge(tmp.samp.ras.poly,
-                  tmp.samp[, .(CID, Pop, GRIDID, TOTPOP, stratum_numeric, Stratum, n_samp, n_elig)],
-                  by = c("CID")
+                                           tmp.samp[, .(CID, Pop, GRIDID, TOTPOP, stratum_numeric, Stratum, n_samp, n_elig)],
+                                           by = c("CID")
                 )
               }
               if (nrow(tmp.samp.ras.poly) > 0) tmp.samp.ras.poly$stratum_numeric <- i
@@ -3101,7 +3133,10 @@ main_server <- function(input, output, session) {
               # incProgress(incInc)
             }
           } else {
-            final1 <- qm_rasterToPolygons(final)
+            # Convert single raster to polygons using terra
+            final1 <- terra::as.polygons(final, na.rm = F, aggregate = F)
+            # Convert to sf object
+            final1 <- st_as_sf(final1)
             final1$stratum_numeric <- 1
           }
           # incProgress(0.3)
@@ -3150,7 +3185,6 @@ main_server <- function(input, output, session) {
   samp_raster_shp <- reactive({
     DF <- sample_square$samp_raster_shp
     shiny::validate(need(DF, message = F))
-    CHECKDF<<-DF
     DF <- DF %>% st_transform(4326)
     if (isolate(input$popCreate) == "Yes") DF$Pop <- round(DF$Pop)
     if (input$sampType == "Random Cluster" & input$popCreate == "No" & input$strat == "Yes") {

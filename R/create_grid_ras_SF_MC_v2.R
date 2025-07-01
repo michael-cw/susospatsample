@@ -178,16 +178,16 @@ create_grid_ras_old_SF<-function(shp, cellsize=1000, stratum = NULL, bigN=FALSE,
 ## Fast rbind for sf objects
 ## from: https://stackoverflow.com/questions/7224938/can-rbind-be-parallelized-in-r
 ####################################################################################
-rbind.parallel <- function(list,ncore)
-{
-  do.call.rbind<-function(x){do.call(rbind,x)}
-  cl<-parallel::makeCluster(ncore)
-  list.split<-split(list,rep(1:ncore,length(list)+1)[1:length(list)])
-  list.join<-parallel::parLapply(cl,list.split,do.call.rbind)
-  parallel::stopCluster(cl)
-  list.out<-do.call(rbind,list.join)
-  return(list.out)
-}
+# rbind.parallel <- function(list,ncore)
+# {
+#   do.call.rbind<-function(x){do.call(rbind,x)}
+#   cl<-parallel::makeCluster(ncore)
+#   list.split<-split(list,rep(1:ncore,length(list)+1)[1:length(list)])
+#   list.join<-parallel::parLapply(cl,list.split,do.call.rbind)
+#   parallel::stopCluster(cl)
+#   list.out<-do.call(rbind,list.join)
+#   return(list.out)
+# }
 
 project_to_utm<-function(shp) {
   ## 1. get zone

@@ -24,10 +24,12 @@ Imports:
     dismo,
     doParallel,
     dplyr,
+    doFuture,
     DT,
     fasterize,
     flextable,
     foreach,
+    future,
     geos,
     geosphere,
     ggmap,
@@ -83,4 +85,4 @@ Encoding: UTF-8
 Language: en
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2

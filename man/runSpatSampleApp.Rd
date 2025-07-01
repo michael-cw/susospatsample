@@ -9,7 +9,8 @@ runSpatSampleApp(
   mapwidget.option = c("leaflet", "mapdeck"),
   google_ai_score_url =
     "https://storage.googleapis.com/open-buildings-data/v1/score_thresholds_s2_level_4.csv",
-  google_ai_score_map_url = "https://sites.research.google/open-buildings/tiles.geojson",
+  google_ai_score_map_url =
+    "https://openbuildings-public-dot-gweb-research.uw.r.appspot.com/public/tiles.geojson",
   bufferForSuSoBounds = 5,
   pointsLimit = 1e+05,
   systemCheck = TRUE
