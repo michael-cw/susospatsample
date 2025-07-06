@@ -1948,27 +1948,61 @@ main_server <- function(input, output, session) {
                 summarise()
 
               incProgress(0.2)
-              shpCrsOld <- st_crs(sp_grd_strat_poly)
-              sp_grd_strat_poly <- st_transform(sp_grd_strat_poly, (raster::proj4string(pop_raster)))
-              pop_raster <- crop(pop_raster, extent(sp_grd_strat_poly))
+              
+              ## 0. Raster transform to terra!!
+              pop_raster <- terra::rast(pop_raster)
+              ## 1. For cropping use terra, but transform back then project area to utm
+              crsOld <- st_crs(sp_grd_strat_poly)
+              sp_grd_strat_poly <- st_transform(sp_grd_strat_poly, terra::crs(pop_raster))
+              pop_raster <- terra::crop(pop_raster, terra::ext(sp_grd_strat_poly))
+              ## 2. reproject raster to metered UTM (zone is based on location)--> required for GRIDID
+              sp_grd_strat_poly <- project_to_utm(sp_grd_strat_poly)
+              pop_raster <- terra::project(pop_raster, terra::crs(sp_grd_strat_poly))
+              ## 3. Crop raster to polygon
+              tmp.ras <- terra::crop(pop_raster, sp_grd_strat_poly)
+              tmp.poly.ras<-terra::rasterize(vect(sp_grd_strat_poly), terra::rast(tmp.ras), fun = "max")
+              tmp.poly.ras <- tmp.poly.ras * tmp.ras
+              
+              # shpCrsOld <- st_crs(sp_grd_strat_poly)
+              # sp_grd_strat_poly <- st_transform(sp_grd_strat_poly, (raster::proj4string(pop_raster)))
+              # pop_raster <- crop(pop_raster, extent(sp_grd_strat_poly))
               incProgress(0.2)
-              sp_grd_strat_poly.ras <- fasterize(sp_grd_strat_poly, pop_raster, fun = "max")
+              # sp_grd_strat_poly.ras <- fasterize(sp_grd_strat_poly, pop_raster, fun = "max")
 
-              sp_grd_strat_poly.ras[] <- sp_grd_strat_poly.ras[] * pop_raster[]
+              # sp_grd_strat_poly.ras[] <- sp_grd_strat_poly.ras[] * pop_raster[]
+              # tmp.poly.ras <- sp_grd_strat_poly.ras
+              # tmp.poly<- sp_grd_strat_poly
               incProgress(0.2)
-              popSize <- round(sum(sp_grd_strat_poly.ras[], na.rm = T), digits = 0)
-              ras_points <- data.table(getValues((sp_grd_strat_poly.ras)))
-              ras_points[, CID := 1:.N][, X := floor(xFromCell(tmp.poly.ras, 1:nrow(ras_points)) / 1000)]
-              ras_points[, Y := floor(yFromCell(tmp.poly.ras, 1:nrow(ras_points)) / 1000)]
+              # popSize <- round(sum(sp_grd_strat_poly.ras[], na.rm = T), digits = 0)
+              # ras_points <- data.table(getValues((sp_grd_strat_poly.ras)))
+              # ras_points[, CID := 1:.N][, X := floor(xFromCell(tmp.poly.ras, 1:nrow(ras_points)) / 1000)]
+              # ras_points[, Y := floor(yFromCell(tmp.poly.ras, 1:nrow(ras_points)) / 1000)]
+              # ras_points[, GRIDID := sprintf("Lat%dLon%d", Y, X)]
+              # ras_points[, X := NULL][, Y := NULL]
+              # ras_points <- copy(ras_points[!is.na(V1)])
+              # ras_points[, stratum_numeric := tmp.poly$stratum_numeric]
+              # ras_points[, TOTPOP := ceiling(sum(V1))]
+              
+              ras_points <- data.table::data.table(terra::values(tmp.poly.ras))
+              xres <- terra::xres(tmp.poly.ras)
+              yres <- terra::yres(tmp.poly.ras)
+              
+              # Get coordinates using terra functions
+              coords <- terra::xyFromCell(tmp.poly.ras, 1:terra::ncell(tmp.poly.ras))
+              ras_points[, CID := 1:.N]
+              ras_points[, X := floor(coords[, 1] / xres)]
+              ras_points[, Y := floor(coords[, 2] / yres)]
               ras_points[, GRIDID := sprintf("Lat%dLon%d", Y, X)]
               ras_points[, X := NULL][, Y := NULL]
-              ras_points <- copy(ras_points[!is.na(V1)])
-              ras_points[, stratum_numeric := tmp.poly$stratum_numeric]
-              ras_points[, TOTPOP := ceiling(sum(V1))]
+              ras_points <- copy(ras_points[!is.na(layer)])
+              ras_points[, stratum_numeric := sp_grd_strat_poly$stratum_numeric]
+              ras_points[, TOTPOP := ceiling(sum(layer))]
+              data.table::setnames(ras_points, "layer", "V1")
 
               pop_raster_points <- ras_points
-              sp_grd_strat_poly <- st_transform(sp_grd_strat_poly, shpCrsOld)
-              sp_grd_strat_poly$Pop <- popSize
+              sp_grd_strat_poly <- st_transform(sp_grd_strat_poly, crsOld)
+              sp_grd_strat_poly$Pop <- ceiling(sum(ras_points$V1,na.rm = T)) # popSize
+              setnames(ras_points, "V1", "Pop")
             } else if (input$strat == "Yes") {
               #########################################################################
               ##        STRAT                                                         #
@@ -2800,7 +2834,7 @@ main_server <- function(input, output, session) {
       DF <- data.table::data.table(DF)
       return(DF)
     } else if (isolate(input$popCreate == "Yes") & isolate(input$sampType == "Random Grid")) {
-      pop_raster_shp <- new_shp$sp_grd_strat_points
+      pop_raster_shp <<- new_shp$sp_grd_strat_points
       shiny::validate(need(pop_raster_shp, message = F))
       return(pop_raster_shp)
     } else if (isolate(input$popCreate == "Yes") & isolate(input$sampType == "Random Cluster")) {
@@ -2820,7 +2854,7 @@ main_server <- function(input, output, session) {
       need(pop_raster_shp, message = F),
       need(stratSamp$nStrat, message = F)
     )
-    sampSize <- stratSamp$nStrat
+    sampSize <<- stratSamp$nStrat
     ###     SET SEED FOR SAMPLE
     set.seed(input$sampSEED)
     sample_seed(input$sampSEED)
@@ -2901,10 +2935,27 @@ main_server <- function(input, output, session) {
         size = sampSize,
         pik = pop_raster_shp$Pop
       )
-      pop_raster_shp_samp <- data.table(getdata(pop_raster_shp, st))
+      pop_raster_shp_samp <<- data.table(getdata(pop_raster_shp, st))
 
-      ## calculate weights
-      pop_raster_shp_samp[, weight := ((1 / Prob))]
+      ##########################
+      ## MINIMUM CELL POPULATION
+      if (!is.null(input$minCell) && input$minCell > 0) {
+        ## remove minimum
+        pop_raster_shp_samp[, n_samp := .N, by = .(stratum_numeric)]
+        pop_raster_shp_samp <- pop_raster_shp_samp[Pop >= input$minCell]
+        pop_raster_shp_samp[, n_elig := .N, by = .(stratum_numeric)]
+        pop_raster_shp_samp[, weight1 := n_samp / n_elig]
+        
+        ## combine weight phase 1 and phase 2
+        pop_raster_shp_samp[, weight := ((1 / Prob) * weight1)]
+      } else {
+        ## calculate weights
+        pop_raster_shp_samp[, weight := ((1 / Prob))]
+        
+        ## add columns n_samp and n_elig for consistency
+        pop_raster_shp_samp[, n_samp := .N, by = .(stratum_numeric)]
+        pop_raster_shp_samp[, n_elig := .N, by = .(stratum_numeric)]
+      }
       ## export to resource creation
       sample_square$grd_df_samp_points <- pop_raster_shp_samp
     } else if (input$sampPPS == "Yes" & input$strat == "Yes") {
@@ -2970,7 +3021,7 @@ main_server <- function(input, output, session) {
   ## 4.2.3 Extract sample                                                #
   ########################################################################
   observe({
-    sampDF <- sample_square$grd_df_samp_points
+    sampDF <<- sample_square$grd_df_samp_points
 
     if (input$sampType == "Random Cluster" & input$popCreate == "Yes") {
       sp_grd_strat <- new_shp$sp_grd_strat_poly
@@ -2979,7 +3030,7 @@ main_server <- function(input, output, session) {
     } else if (input$sampType == "Random Grid" & input$popCreate == "No") {
       sp_grd_strat <- new_shp$sp_grd_strat
     } else {
-      sp_grd_strat <- new_shp$sp_grd_strat_poly
+      sp_grd_strat <<- new_shp$sp_grd_strat_poly
     }
     shiny::validate(need(sampDF, message = F))
     shiny::validate(need(sp_grd_strat, message = F))
@@ -2994,7 +3045,7 @@ main_server <- function(input, output, session) {
                               this treshold.")
       ## --> stop until new data is loaded
       req(FALSE)
-    } else if (input$sampType == "Random Grid" && input$popCreate == "Yes" &&
+    } else if (input$sampType == "Random Grid" && input$popCreate == "Yes" && input$strat == "Yes" &&
       dplyr::n_distinct(sp_grd_strat$stratum_numeric) != dplyr::n_distinct(sampDF$stratum_numeric)) {
       ##################################
       ## 2. CHECK for 0 observations in ANY stratum
@@ -3018,16 +3069,30 @@ main_server <- function(input, output, session) {
           # pop_raster_shp<-new_shp$sp_grd_strat
           pop_raster_shp_samp <- sp_grd_strat[sampDF$ID_unit, ]
         } else if (isolate(input$popCreate) == "Yes" & isolate(input$strat) == "No") {
-          pop_raster <- new_shp$pop_raster
+          pop_raster <<- new_shp$pop_raster
           shiny::validate(need(pop_raster, message = F))
+          # transform sp_grd_strat crs to pop_raster crs
+          sp_grd_strat <- st_transform(sp_grd_strat, raster::crs(pop_raster))
           tmp.samp <- copy(sampDF)
-          tmp.samp.ras <- raster(nrows = nrow(pop_raster), ncols = ncol(pop_raster), crs = crs(pop_raster))
-          extent(tmp.samp.ras) <- extent(pop_raster)
-          tmp.samp.ras[] <- NA
-          tmp.samp.ras[tmp.samp$CID] <- pop_raster[tmp.samp$CID]
-          pop_raster_shp_samp <- qm_rasterToPolygons(tmp.samp.ras)
-          # names(pop_raster_shp_samp)<-c("Pop", "geometry")
-          pop_raster_shp_samp <- cbind(pop_raster_shp_samp, tmp.samp)
+          tmp.ras <- terra::crop(pop_raster, sp_grd_strat)
+          # Create empty raster with same dimensions and properties
+          tmp.samp.ras <- terra::rast(nrows = nrow(tmp.ras), ncols = ncol(tmp.ras), 
+                                      crs = terra::crs(tmp.ras), extent = terra::ext(tmp.ras))
+          # Initialize with NA values
+          terra::values(tmp.samp.ras) <- NA
+          # Assign values from original raster using cell IDs
+          terra::values(tmp.samp.ras)[tmp.samp$CID] <- terra::values(tmp.ras)[tmp.samp$CID]
+          # Transform to polygons
+          pop_raster_shp_samp <<- st_as_sf(terra::as.polygons(tmp.samp.ras, na.rm = F, aggregate = F))
+          # Add row names as CID
+          pop_raster_shp_samp$CID <- as.character(1:nrow(pop_raster_shp_samp))
+          ## ADD other Frame data
+          tmpStrat <- 1
+          tmp.samp <- sampDF[stratum_numeric == tmpStrat]
+          pop_raster_shp_samp <- merge(pop_raster_shp_samp,
+                                     tmp.samp[, .(CID, Pop, GRIDID, TOTPOP, stratum_numeric, Stratum, n_samp, n_elig)],
+                                     by = c("CID")
+          )
         } else if (isolate(input$popCreate) == "Yes" & isolate(input$strat) == "Yes") {
           ## popCreat is YES, strat is YES
           pop_raster <- new_shp$pop_raster

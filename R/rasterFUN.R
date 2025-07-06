@@ -7,9 +7,10 @@ ras_NA_to_0<-function(rf=rst) {
   crsold<-raster::proj4string(rf)
   rfDF[is.na(rfDF)]<-0
   raster::values(rf)<-rfDF
-  writeRaster(rf, paste0(tmpDir(), "tmpRas.tif"), overwrite=TRUE, format = "GTiff")
+  tmpfile<- tempfile(fileext = ".tif")
+  writeRaster(rf, tmpfile, overwrite=TRUE, format = "GTiff")
   rm(rf)
-  rf<-raster(paste0(tmpDir(), "tmpRas.tif"))
+  rf<-raster(tmpfile)
   sp::proj4string(rf)<-crsold
   return(rf)
 }
