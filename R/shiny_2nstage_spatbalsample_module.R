@@ -2,7 +2,7 @@
 #'
 #'
 #'
-#' @description Modul to create the 2nd stage sample from listing units for each cluster. Available sampling modes are:
+#' @description Module to create the 2nd stage sample from listing units for each cluster. Available sampling modes are:
 #' - spatial random sample
 #' - spatially balanced sample
 #' - spatially balanced sample with minimum distance
@@ -115,17 +115,17 @@ modal_spsample2stage_server <- function(id, shape_boundaries = reactive({ NULL }
     # transform frame data to spatial & project
     framedatasf<-reactive({
       req(framedata())
-      frdat<-framedata()
+      frdat<<-framedata()
       shiny::showNotification("Transforming data to spatial.")
       # identify lat/long
-      lat<-names(frdat)[grepl(x = names(frdat), pattern = "latitude", ignore.case = T)]
-      long<-names(frdat)[grepl(x = names(frdat), pattern = "longitude", ignore.case = T)]
+      lat<<-names(frdat)[grepl(x = names(frdat), pattern = "latitude", ignore.case = T)]
+      long<<-names(frdat)[grepl(x = names(frdat), pattern = "longitude", ignore.case = T)]
       # drop missing
-      frdat <- frdat %>% dplyr::filter(!is.na(.data[[lat]]) & !is.na(.data[[long]]))
+      frdat <- frdat %>% dplyr::filter(!is.na(.data[[lat[2]]]) & !is.na(.data[[long[2]]]))
       # generate cluster count
       frdat<-frdat %>% group_by(.data[[input$clustervar]]) %>% mutate(CLUSTERCOUNT = n())
       frdat<-as.data.frame(frdat)
-      frdat<-st_as_sf(frdat, coords = c(long, lat), crs=4326)
+      frdat<-st_as_sf(frdat, coords = c(long[2], lat[2]), crs=4326)
 
       # project data
       # suppressMessages(
