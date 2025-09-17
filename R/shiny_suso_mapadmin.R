@@ -14,7 +14,7 @@
 mapadminUI <- function(id) {
   ns <- NS(id)
   tagList(
-    shinyWidgets::useShinydashboard(),
+    useShinydashboard(),
     shinyjs::useShinyjs(),
     ## shiny alert conditional on version
     if (utils::packageVersion("shinyalert") < '3.0.0') shinyalert::useShinyalert(),
@@ -686,4 +686,22 @@ suso_mapupload2 <- function(server = suso_get_api_key("susoServer"),
   result <- data.table::data.table(result$data$uploadMap)
   if (nrow(result) > 0) result[, importDateUtc := lubridate::as_datetime(importDateUtc)][]
   return(result)
+}
+
+#' @importFrom htmltools findDependencies attachDependencies
+#' 
+#############################
+## Copied from shinywidget package version 0.7.6.9300
+## https://github.com/dreamRs/shinyWidgets
+## /blob/26838f9e9ccdc90a47178b45318d110f5812d6e1/R/useShinydashboard.R
+
+useShinydashboard <- function() {
+  if (!requireNamespace(package = "shinydashboard"))
+    message("Package 'shinydashboard' is required to run this function")
+  deps <- findDependencies(shinydashboard::dashboardPage(
+    header = shinydashboard::dashboardHeader(),
+    sidebar = shinydashboard::dashboardSidebar(),
+    body = shinydashboard::dashboardBody()
+  ))
+  attachDependencies(tags$div(class = "main-sidebar", style = "display: none;"), value = deps)
 }

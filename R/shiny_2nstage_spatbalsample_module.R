@@ -115,11 +115,11 @@ modal_spsample2stage_server <- function(id, shape_boundaries = reactive({ NULL }
     # transform frame data to spatial & project
     framedatasf<-reactive({
       req(framedata())
-      frdat<<-framedata()
+      frdat<-framedata()
       shiny::showNotification("Transforming data to spatial.")
       # identify lat/long
-      lat<<-names(frdat)[grepl(x = names(frdat), pattern = "latitude", ignore.case = T)]
-      long<<-names(frdat)[grepl(x = names(frdat), pattern = "longitude", ignore.case = T)]
+      lat<-names(frdat)[grepl(x = names(frdat), pattern = "latitude", ignore.case = T)]
+      long<-names(frdat)[grepl(x = names(frdat), pattern = "longitude", ignore.case = T)]
       # drop missing
       frdat <- frdat %>% dplyr::filter(!is.na(.data[[lat[2]]]) & !is.na(.data[[long[2]]]))
       # generate cluster count
@@ -178,12 +178,14 @@ modal_spsample2stage_server <- function(id, shape_boundaries = reactive({ NULL }
       } else if(input$samplemode=="Balanced w. minimum distance"){
         set.seed(input$sampSEED)
         req(input$mindist)
+        frdatsf<-frdatsf %>% sf::st_transform(3857)
         samp<-spsurvey::grts(
           frdatsf,
           mindis = input$mindist,
           n_base = strata_n,
           stratum_var = input$clustervar
         )
+        
         # ATTENTION, GIVES ERROR IN CERTAIN SAMPLES. CHECK LATER!
         # bal_score_dist<-spsurvey::sp_balance(samp$sites_base, frdatsf)
         # print(bal_score_dist)
@@ -203,6 +205,10 @@ modal_spsample2stage_server <- function(id, shape_boundaries = reactive({ NULL }
 
       ## prepare for map and download
       tabsf<-samp$sites_base %>% st_transform(4326)
+      # (reorder column first)
+      tabsf <- tabsf %>%
+        dplyr::select(input$clustervar, dplyr::everything())
+      
       mapsampledata(tabsf)
       tab<-as.data.frame(tabsf %>% st_set_geometry(NULL))
       #tab<-cbind(tab, st_coordinates(tabsf))

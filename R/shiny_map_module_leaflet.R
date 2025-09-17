@@ -40,7 +40,7 @@ mapServer <- function(id,
           leaflet::setView(lng = startlong(), lat = startlat(), zoom = 12)
       }
     })
-
+    # Polygon
     observe({
       sf_poly <- (updateMap())
       filcolvar <- (updateGroup())
@@ -148,6 +148,25 @@ mapServer <- function(id,
           }
         }
       }
+    })
+    
+    # Points
+    observe({
+      sf_points <- (updateMapPts())
+      popvar <- z_var()
+      
+      req(!is.null(sf_points))
+      req(!is.null(popvar))
+      
+      bounds <- sf::st_bbox(sf_points) %>% as.character()
+      
+      lfp %>%
+        leaflet::clearMarkers() %>%
+        fitBounds(bounds[1], bounds[2], bounds[3], bounds[4]) %>%
+        leaflet::addMarkers(
+          data = sf_points,
+          popup = ~htmltools::htmlEscape(sf_points[[popvar]])
+        )
     })
   })
 }

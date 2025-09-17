@@ -912,7 +912,7 @@ main_server <- function(input, output, session) {
         polyId = reactive(NULL), z_var = reactive(NULL)
       )
     } else if (getOption("mapwidget.option") == "leaflet") {
-      print("NOT YET")
+      # print("NOT YET")
       mapServer("baseMap_leaf",
                 updateMap = reactive({
                   Boundaries2
@@ -2307,7 +2307,7 @@ main_server <- function(input, output, session) {
                                    )
                                  )
                                  
-                                 if (class(tmp.ras) == "stars") {
+                                 if (inherits(tmp.ras, "stars")) {
                                    pop <- round(sum(tmp.ras[[1]], na.rm = T))
                                  } else {
                                    pop <- tmp.ras
@@ -3670,10 +3670,16 @@ main_server <- function(input, output, session) {
           layeridpts = "2ndstagesample"
         )
       } else if (getOption("mapwidget.option") == "leaflet") {
-        print("NOT YET")
-        # mapServer("baseMap_leaf",
-        #           updateMap = reactive({shp}),
-        #           updateGroup = reactive({"Pop"}))
+        #print("NOT YET")
+        # use name of first column, which is stratum id
+        # from snd stage sample
+        labelvar<-names(gridPointsSpatial2stage()[,1] %>% st_set_geometry(NULL))
+        
+        mapServer("baseMap_leaf",
+                  updateMapPts = gridPointsSpatial2stage,
+                  z_var = reactive({
+                    labelvar
+                  }))
       }
     }
   })

@@ -567,7 +567,7 @@ modal_createbasemap_server <- function(id,
                          )
                          tmpFile<-fn
                          try(
-                           {download.file(url = TPKlink, destfile = tmpFile, method = "auto", quiet = T)}, silent = F,
+                           {utils::download.file(url = TPKlink, destfile = tmpFile, method = "auto", quiet = T)}, silent = F,
                            outFile = file(tpkDWLError, "at")
                          )
                          incProgress(0.8/length(st_geometry(samp_raster_shp)))
@@ -622,7 +622,6 @@ modal_createbasemap_server <- function(id,
                            incProgress(0.8/length(st_geometry(samp_raster_shp)))
                          }
 
-                         CHECKtmpFile<<-tmpFile
 
                          # create zip file
                          zfile<-tempfile("mapfordownload", fileext = ".zip")

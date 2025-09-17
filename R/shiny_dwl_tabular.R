@@ -55,7 +55,7 @@ download_csv_server <- function(id,
         shiny::validate(need(content(), message = F))
 
         fn<-file.path(tempdir(), paste0(file_name(), ".csv"))
-        data.table::fwrite(content(), file = fn)
+        data.table::fwrite(content(), file = fn, encoding = "UTF-8", bom = T)
         fnzip<-file.path(tempdir(), paste0(file_name(), ".zip"))
         zip::zip(zipfile=fnzip, files=fn, mode = "cherry-pick")
 
